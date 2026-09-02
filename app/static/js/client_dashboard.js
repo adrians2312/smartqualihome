@@ -912,7 +912,7 @@
         return;
       }
 
-      // ── Flat view: return all cards to the main grid ──
+      // ── Flat view: return all cards to the main grid sorted by qualification tier ──
       if (browseSections) browseSections.classList.add('d-none');
       if (grid) grid.classList.remove('d-none');
       [secQGrid, secCGrid, secNGrid].forEach(function (sec) {
@@ -922,14 +922,31 @@
         });
       });
 
-      let visible = 0;
+      // Collect cols that pass base filters (search/type/budget/beds); qualification filter now sorts instead of hiding
+      var flatCols = [];
       grid.querySelectorAll(".browse-card-col").forEach(function (col) {
-        const matchQual = matchQualification(col, qual);
         updateCardQualificationBadge(col, qual, clientIncome);
+        var showBase = baseMatches(col);
+        col.classList.toggle("d-none", !showBase);
+        if (showBase) flatCols.push(col);
+      });
 
-        const show = baseMatches(col) && matchQual;
-        col.classList.toggle("d-none", !show);
-        if (show) visible++;
+      // When a qualification filter is active, sort all base-matching cards by tier: Qualified → Conditional → Not Qualified
+      if (qual && flatCols.length > 1) {
+        function qualTier(c) {
+          var badge = c.querySelector('.js-browse-qual-badge');
+          if (!badge) return 2;
+          if (badge.classList.contains('badge-qualified')) return 0;
+          if (badge.classList.contains('badge-conditional')) return 1;
+          return 2;
+        }
+        flatCols.sort(function (a, b) { return qualTier(a) - qualTier(b); });
+        flatCols.forEach(function (c) { grid.appendChild(c); });
+      }
+
+      var visible = 0;
+      grid.querySelectorAll(".browse-card-col").forEach(function (col) {
+        if (!col.classList.contains('d-none')) visible++;
       });
 
       if (noRes) noRes.classList.toggle("d-none", visible > 0);

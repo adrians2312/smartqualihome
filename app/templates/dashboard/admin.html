@@ -1025,6 +1025,114 @@
             </div>
           </div>
 
+          <div class="lem-pb-wrap mb-3">
+            <div class="lem-pb-header">
+              <i class="fas fa-file-invoice-dollar me-2"></i>Full Pricing Breakdown
+            </div>
+            <div class="lem-pb-sec-label">Selling Prices</div>
+            <div class="row g-2 mb-3">
+              <div class="col-12 col-md-6">
+                <div class="lem-pb-card">
+                  <div class="lem-pb-label">Total Selling Price</div>
+                  <div class="lem-pb-value" id="lemPvTotalSelling">—</div>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="lem-pb-card">
+                  <div class="lem-pb-label">Promo Discount</div>
+                  <div class="lem-pb-value" id="lemPvPromoDiscount">—</div>
+                  <div class="lem-pb-sub" id="lemPvNetSelling">—</div>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="lem-pb-card">
+                  <div class="lem-pb-label">VAT</div>
+                  <div class="lem-pb-value" id="lemPvVatAmount">—</div>
+                  <div class="lem-pb-sub" id="lemPvVatRate">—</div>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="lem-pb-card">
+                  <div class="lem-pb-label">LMF</div>
+                  <div class="lem-pb-value" id="lemPvLmfAmount">—</div>
+                  <div class="lem-pb-sub" id="lemPvLmfRate">—</div>
+                </div>
+              </div>
+            </div>
+            <div class="lem-pb-sec-label">Summary</div>
+            <div class="row g-2 mb-3">
+              <div class="col-12 col-md-6">
+                <div class="lem-pb-card">
+                  <div class="lem-pb-label">Total Contract Price</div>
+                  <div class="lem-pb-value" id="lemPvTotalContract">—</div>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="lem-pb-card">
+                  <div class="lem-pb-label">Reservation Fee</div>
+                  <div class="lem-pb-value" id="lemPvReservationFee">—</div>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="lem-pb-card">
+                  <div class="lem-pb-label">Total Downpayment</div>
+                  <div class="lem-pb-value" id="lemPvTotalDownpayment">—</div>
+                  <div class="lem-pb-sub" id="lemPvDownpaymentRate">—</div>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="lem-pb-card">
+                  <div class="lem-pb-label">Monthly Downpayment</div>
+                  <div class="lem-pb-value" id="lemPvMonthlyDownpayment">—</div>
+                  <div class="lem-pb-sub" id="lemPvDownpaymentTerms">—</div>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="lem-pb-card">
+                  <div class="lem-pb-label">Total Loanable Amount</div>
+                  <div class="lem-pb-value" id="lemPvLoanableAmount">—</div>
+                  <div class="lem-pb-sub" id="lemPvLoanableRate">—</div>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="lem-pb-card">
+                  <div class="lem-pb-label">Annual Interest Rate</div>
+                  <div class="lem-pb-value" id="lemPvAnnualInterest">—</div>
+                </div>
+              </div>
+            </div>
+            <div class="lem-pb-sec-label">Amortization</div>
+            <div class="row g-2 mb-3">
+              <div class="col-6 col-md-3">
+                <div class="lem-pb-amort-card"><div class="lem-pb-amort-term">5 YEARS</div><div class="lem-pb-amort-value" id="lemPvAmort5">—</div><div class="lem-pb-amort-unit">/month</div></div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="lem-pb-amort-card"><div class="lem-pb-amort-term">10 YEARS</div><div class="lem-pb-amort-value" id="lemPvAmort10">—</div><div class="lem-pb-amort-unit">/month</div></div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="lem-pb-amort-card"><div class="lem-pb-amort-term">15 YEARS</div><div class="lem-pb-amort-value" id="lemPvAmort15">—</div><div class="lem-pb-amort-unit">/month</div></div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="lem-pb-amort-card"><div class="lem-pb-amort-term">20 YEARS</div><div class="lem-pb-amort-value" id="lemPvAmort20">—</div><div class="lem-pb-amort-unit">/month</div></div>
+              </div>
+            </div>
+            <div class="lem-pb-sec-label">Required Monthly Income</div>
+            <div class="row g-2">
+              <div class="col-6 col-md-3">
+                <div class="lem-pb-amort-card"><div class="lem-pb-amort-term">5 YEARS</div><div class="lem-pb-amort-value" id="lemPvReqIncome5">—</div><div class="lem-pb-amort-unit">/month</div></div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="lem-pb-amort-card"><div class="lem-pb-amort-term">10 YEARS</div><div class="lem-pb-amort-value" id="lemPvReqIncome10">—</div><div class="lem-pb-amort-unit">/month</div></div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="lem-pb-amort-card"><div class="lem-pb-amort-term">15 YEARS</div><div class="lem-pb-amort-value" id="lemPvReqIncome15">—</div><div class="lem-pb-amort-unit">/month</div></div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="lem-pb-amort-card"><div class="lem-pb-amort-term">20 YEARS</div><div class="lem-pb-amort-value" id="lemPvReqIncome20">—</div><div class="lem-pb-amort-unit">/month</div></div>
+              </div>
+            </div>
+          </div>
+
           <div class="d-flex gap-2 justify-content-between pt-3 border-top">
             <button type="button" class="btn btn-outline-crimson prop-delete-btn" id="lemDeleteBtn"><i class="fas fa-trash me-1"></i> Delete</button>
             <div class="d-flex gap-2" id="editPropFooterActions">
@@ -2559,7 +2667,8 @@
                  data-prop-added="{{ p.created_at.strftime('%b %d, %Y') }}"
                  data-prop-status="{{ p.approval_status or 'approved' }}"
                  data-prop-listing-status="{{ p.status or 'available' }}"
-                 data-prop-images="{{ p.images or '' }}">
+                 data-prop-images="{{ p.images or '' }}"
+                 data-prop-pricing-json="{{ property_pricing_map.get(p.id, {})|tojson|forceescape }}">
               <div class="prop-card-img-wrap">
                 {% if first_img %}
                 <img src="{{ first_img | img_src }}" alt="{{ p.name }}" class="prop-card-img">
@@ -3423,7 +3532,7 @@
                       {% else %}—{% endif %}
                     </td>
                     <td data-label="Max Loanable">&#8369;{{ '{:,.0f}'.format(r.max_loanable) if r.max_loanable else '—' }}</td>
-                    <td class="hide-tablet" data-label="Similarity">{% if r.similarity_score is not none %}{{ '%.1f'|format(r.similarity_score * 100) }}%{% else %}—{% endif %}</td>
+                    <td class="hide-tablet" data-label="Similarity">{% if r.similarity_score is not none %}{% set r_sim = r.similarity_score %}<span class="sqh-badge {{ 'badge-qualified' if r_sim >= 0.70 else ('badge-conditional' if r_sim >= 0.40 else 'badge-not-qualified') }}">{{ 'High' if r_sim >= 0.70 else ('Moderate' if r_sim >= 0.40 else 'Low') }}</span>{% else %}—{% endif %}</td>
                     <td data-label="Result">
                       {% if r.status == 'Qualified' %}<span class="sqh-badge badge-qualified">Qualified</span>
                       {% elif r.status == 'Conditionally Qualified' %}<span class="sqh-badge badge-conditional">Conditional</span>

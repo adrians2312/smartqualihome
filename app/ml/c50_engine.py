@@ -223,7 +223,8 @@ def _compute_similarity(feat_scaled: np.ndarray, top_k: int = 50) -> float:
     resembles historically successful (Qualified / Conditionally Qualified) buyers.
     """
     if _train_X is None or len(_train_X) == 0:
-        return 0.5
+        # No training data to compare against — must be Low similarity per 09_02_2026 spec
+        return 0.15
 
     sims = cosine_similarity([feat_scaled], _train_X)[0]
 
@@ -244,7 +245,7 @@ def _compute_similarity(feat_scaled: np.ndarray, top_k: int = 50) -> float:
 
     total_sim     = sims_top.sum()
     if total_sim == 0:
-        return 0.5
+        return 0.15
 
     qualified_sim = sims_top[labels_top >= 1].sum()   # Qualified or Conditional
     return float(min(0.99, qualified_sim / total_sim))
@@ -446,9 +447,14 @@ def predict(gross_income, monthly_loans, tenure_months,
         similarity_score = round(min(0.99, final_conf), 4)
 
     else:
-        # Fallback: pure rule-based
+        # Fallback: pure rule-based — with no training data, similarity must be Low (per 09_02_2026 Issue 2)
         status, _ = _rule_predict(dti, tenure_months, employment_type)
-        similarity_score = round(_rule_sim(dti, tenure_months, employment_type), 4)
+        # Cap similarity to Low tier (<0.40) when untrained; preserves some variance for display but never High
+        raw_sim = _rule_sim(dti, tenure_months, employment_type)
+        similarity_score = round(min(0.35, raw_sim), 4)
+        # Extra guard: if insufficient training data, force Low regardless of DTI
+        if _train_X is None or len(_train_X) == 0:
+            similarity_score = round(min(similarity_score, 0.30), 4)
 
     factors = _build_factors(dti, gross_income, monthly_loans,
                              tenure_months, employment_type, age, dependents)

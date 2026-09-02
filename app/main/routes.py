@@ -1025,10 +1025,10 @@ def agent_dashboard():
         return redirect(url_for("main.index"))
 
     my_props_q = (Property.query
+                  .filter(Property.status == "available")
                   .filter(db.or_(Property.approval_status == "approved", Property.approval_status.is_(None))))
-    # Agents only ever see their own listings here; admins keep the full view.
-    if current_user.role == "agent":
-        my_props_q = my_props_q.filter(Property.agent_id == current_user.id)
+    # Agents now see all published models per 09_02_2026 feedback; admins keep full view.
+    # (Removed agent_id filter so agent listings show all approved models, not just own.)
     my_props = (my_props_q
                 .options(
                     selectinload(Property.sale_record).selectinload(PropertySale.client),
@@ -1329,6 +1329,11 @@ def admin_dashboard():
                       .all())
     all_clients    = User.query.filter_by(role="client").order_by(User.created_at.desc()).all()
     all_agents     = User.query.filter_by(role="agent").order_by(User.created_at.desc()).all()
+    # Pricing map for admin model detail breakdown (mirrors agent/client)
+    try:
+        property_pricing_map = {int(p.id): _compute_property_pricing(p) for p in all_properties if p and p.id}
+    except Exception:
+        property_pricing_map = {}
 
     # Overview stats — derived from the lists above instead of extra COUNT queries
     total_users    = len(all_clients) + len(all_agents)
@@ -1525,6 +1530,7 @@ def admin_dashboard():
                            dismissed_asmnt_ids=dismissed_asmnt_ids,
                            dismissed_sale_ids=dismissed_sale_ids,
                            notif_count=notif_count,
+                           property_pricing_map=property_pricing_map,
                             all_projects=all_projects,
                             all_subdivisions=all_subdivisions,
                             sub_counts=sub_counts,
@@ -1643,7 +1649,7 @@ def admin_user_profile(user_id):
             "status": latest_result.status if latest_result else "—",
             "dti": f"{latest_result.dti_ratio:.1f}%" if latest_result and latest_result.dti_ratio is not None else "—",
             "max_loanable": f"₱{float(latest_result.max_loanable):,.0f}" if latest_result and latest_result.max_loanable else "—",
-            "similarity": f"{latest_result.similarity_score * 100:.0f}%" if latest_result and latest_result.similarity_score is not None else "—",
+            "similarity": ("High" if latest_result.similarity_score >= 0.70 else ("Moderate" if latest_result.similarity_score >= 0.40 else "Low")) if latest_result and latest_result.similarity_score is not None else "—",
         } if latest_result else None
 
         assessment_rows = sorted(user.qualification_results, key=lambda x: x.created_at, reverse=True)[:5]
@@ -1657,7 +1663,7 @@ def admin_user_profile(user_id):
                 "assessment_mode": _normalize_assessment_mode(r.assessment_mode, fallback_mode),
                 "dti": f"{r.dti_ratio:.1f}%" if r.dti_ratio is not None else "—",
                 "max_loanable": f"₱{float(r.max_loanable):,.0f}" if r.max_loanable else "—",
-                "similarity": f"{r.similarity_score * 100:.0f}%" if r.similarity_score is not None else "—",
+                "similarity": ("High" if r.similarity_score >= 0.70 else ("Moderate" if r.similarity_score >= 0.40 else "Low")) if r.similarity_score is not None else "—",
             })
 
         data["documents"] = {
@@ -4745,7 +4751,7 @@ def agent_client_profile(user_id):
             "assessment_mode": _normalize_assessment_mode(result.assessment_mode, "reassess") if result else "reassess",
             "dti":          f"{result.dti_ratio:.1f}%" if result.dti_ratio is not None else "—",
             "max_loanable": f"₱{float(result.max_loanable):,.0f}" if result.max_loanable else "—",
-            "similarity":   f"{result.similarity_score * 100:.0f}%" if result.similarity_score is not None else "—",
+            "similarity":   ("High" if result.similarity_score >= 0.70 else ("Moderate" if result.similarity_score >= 0.40 else "Low")) if result and result.similarity_score is not None else "—",
         } if result else None,
         "assessments": [
             {
@@ -4757,7 +4763,7 @@ def agent_client_profile(user_id):
                 ),
                 "dti": f"{qr.dti_ratio:.1f}%" if qr.dti_ratio is not None else "—",
                 "max_loanable": f"₱{float(qr.max_loanable):,.0f}" if qr.max_loanable else "—",
-                "similarity": f"{qr.similarity_score * 100:.0f}%" if qr.similarity_score is not None else "—",
+                "similarity": ("High" if qr.similarity_score >= 0.70 else ("Moderate" if qr.similarity_score >= 0.40 else "Low")) if qr.similarity_score is not None else "—",
             }
             for idx, qr in enumerate(assessment_history)
         ],

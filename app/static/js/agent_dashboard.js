@@ -381,12 +381,14 @@ document.getElementById('submitPropBtn') && document.getElementById('submitPropB
   fd.append('barangay_code',  document.getElementById('sp_barangay_code').value.trim());
   fd.append('barangay_name',  document.getElementById('sp_barangay_name').value.trim());
   fd.append('prop_type',      propType);
-  fd.append('price',          price);
+  fd.append('price',          price.replace(/,/g, ''));
+  var spUnitEl = document.getElementById('sp_unit_id');
+  fd.append('unit_id',        spUnitEl ? spUnitEl.value.trim() : '');
   fd.append('bedrooms',       document.getElementById('sp_bedrooms').value || '0');
   fd.append('bathrooms',      document.getElementById('sp_bathrooms').value || '0');
   fd.append('storeys',        document.getElementById('sp_storeys').value || '1');
-  fd.append('floor_area',     document.getElementById('sp_floor_area').value.trim());
-  fd.append('lot_area',       document.getElementById('sp_lot_area').value.trim());
+  fd.append('floor_area',     document.getElementById('sp_floor_area').value.trim().replace(/,/g, ''));
+  fd.append('lot_area',       document.getElementById('sp_lot_area').value.trim().replace(/,/g, ''));
   fd.append('subdivision_id', document.getElementById('sp_subdivision').value);
   var spAgentEl = document.getElementById('sp_agent_id');
   if (spAgentEl) fd.append('agent_id', spAgentEl.value || '');
@@ -406,8 +408,8 @@ document.getElementById('submitPropBtn') && document.getElementById('submitPropB
       }
       bootstrap.Modal.getInstance(document.getElementById('submitPropertyModal')).hide();
       _resetSubmitForm();
-      showToast('Property submitted for admin review!', 'success');
-      setTimeout(function () { location.reload(); }, 1200);
+      showToast('Property submitted for admin review! It will appear after admin approval.', 'success');
+      // Real-time: no full page reload required per FR-2; listings refresh on next navigation/fetch
     })
     .catch(function () {
       btn.disabled = false;
@@ -418,7 +420,7 @@ document.getElementById('submitPropBtn') && document.getElementById('submitPropB
 });
 
 function _resetSubmitForm() {
-  ['sp_name','sp_site_notes','sp_location','sp_region','sp_price','sp_floor_area','sp_lot_area','sp_description',
+  ['sp_name','sp_site_notes','sp_location','sp_region','sp_price','sp_unit_id','sp_floor_area','sp_lot_area','sp_description',
    'sp_region_code','sp_region_name','sp_province_code','sp_province_name','sp_citymun_code','sp_citymun_name','sp_barangay_code','sp_barangay_name'].forEach(function (id) {
     var el = document.getElementById(id); if (el) el.value = '';
   });
