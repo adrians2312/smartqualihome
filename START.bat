@@ -1,4 +1,6 @@
 @echo off
+REM Always run from the folder where START.bat is located (handles Extract + Double-click, even "Run as admin")
+cd /d "%~dp0"
 title SMARTQUALIHOME - One-Click Start
 color 0A
 echo ============================================================
