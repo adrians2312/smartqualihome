@@ -11,3 +11,10 @@ instance/uploads/
 
 # Environment variables
 .env
+# Production secrets (set via Render dashboard, not committed)
+.env.production
+.env.production.example
+aiven-ca.pem
+# Local distribution zips
+smartqualihome*.zip
+smartqualihome_LOCAL_*.zip
