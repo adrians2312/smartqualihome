@@ -2116,7 +2116,7 @@
                     {{ qualify_form.gross_monthly_income.label(class="sqh-form-label") }}
                     <div class="input-group">
                       <span class="input-group-text sqh-peso-prefix">&#8369;</span>
-                      {{ qualify_form.gross_monthly_income(class="form-control sqh-form-control", id="qm-gross", **{"data-commas": "", "inputmode": "decimal"}) }}
+                      {{ qualify_form.gross_monthly_income(class="form-control sqh-form-control", id="qm-gross", type="text", **{"data-commas": "", "inputmode": "decimal"}) }}
                     </div>
                     <div class="sqh-live-error" id="qm-gross-err"></div>
                   </div>
@@ -2124,7 +2124,7 @@
                     {{ qualify_form.monthly_debt_loans.label(class="sqh-form-label") }}
                     <div class="input-group">
                       <span class="input-group-text sqh-peso-prefix">&#8369;</span>
-                      {{ qualify_form.monthly_debt_loans(class="form-control sqh-form-control", id="qm-debt", **{"data-commas": "", "inputmode": "decimal"}) }}
+                      {{ qualify_form.monthly_debt_loans(class="form-control sqh-form-control", id="qm-debt", type="text", **{"data-commas": "", "inputmode": "decimal"}) }}
                     </div>
                     <div class="sqh-live-error" id="qm-debt-err"></div>
                   </div>
@@ -2215,7 +2215,7 @@
                     {{ qualify_form.budget_min.label(class="sqh-form-label") }}
                     <div class="input-group">
                       <span class="input-group-text sqh-peso-prefix">&#8369;</span>
-                      {{ qualify_form.budget_min(class="form-control sqh-form-control", id="qm-bmin", **{"data-commas": "", "inputmode": "decimal"}) }}
+                      {{ qualify_form.budget_min(class="form-control sqh-form-control", id="qm-bmin", type="text", **{"data-commas": "", "inputmode": "decimal"}) }}
                     </div>
                     <div class="sqh-live-error" id="qm-bmin-err"></div>
                   </div>
@@ -2223,7 +2223,7 @@
                     {{ qualify_form.budget_max.label(class="sqh-form-label") }}
                     <div class="input-group">
                       <span class="input-group-text sqh-peso-prefix">&#8369;</span>
-                      {{ qualify_form.budget_max(class="form-control sqh-form-control", id="qm-bmax", **{"data-commas": "", "inputmode": "decimal"}) }}
+                      {{ qualify_form.budget_max(class="form-control sqh-form-control", id="qm-bmax", type="text", **{"data-commas": "", "inputmode": "decimal"}) }}
                     </div>
                     <div class="sqh-live-error" id="qm-bmax-err"></div>
                   </div>

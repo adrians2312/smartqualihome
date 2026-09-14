@@ -94,6 +94,11 @@ function sqhFormatNumericValue(raw) {
 
 function sqhBindNumericFormatting(root) {
   (root || document).querySelectorAll('input[data-commas]').forEach(function (el) {
+    // WTForms DecimalField renders type="number" by default; commas are
+    // invalid in number inputs so the browser blanks "1,000" on the 4th
+    // digit. Force text BEFORE binding (and on re-bind) so formatting sticks.
+    try { el.setAttribute('type', 'text'); } catch (_) {}
+    try { if (el.type !== 'text') el.type = 'text'; } catch (_) {}
     if (el.dataset.sqhCommasBound) return;
     el.dataset.sqhCommasBound = '1';
     el.setAttribute('inputmode', 'decimal');

@@ -531,7 +531,7 @@ Fill in your details and receive an instant AI-powered evaluation of your mortga
                   <div class="input-group">
                     <span class="input-group-text sqh-peso-prefix">&#8369;</span>
                     {{ form.gross_monthly_income(class="form-control sqh-form-control" + (" is-invalid" if form.gross_monthly_income.errors else ""),
-                                                 id="gross_monthly_income", **{"data-commas": "", "inputmode": "decimal"}) }}
+                                                 id="gross_monthly_income", type="text", **{"data-commas": "", "inputmode": "decimal"}) }}
                   </div>
                   {% for err in form.gross_monthly_income.errors %}
                     <div class="invalid-feedback d-block">{{ err }}</div>
@@ -545,7 +545,7 @@ Fill in your details and receive an instant AI-powered evaluation of your mortga
                   <div class="input-group">
                     <span class="input-group-text sqh-peso-prefix">&#8369;</span>
                     {{ form.monthly_debt_loans(class="form-control sqh-form-control" + (" is-invalid" if form.monthly_debt_loans.errors else ""),
-                                               id="monthly_debt_loans", **{"data-commas": "", "inputmode": "decimal"}) }}
+                                               id="monthly_debt_loans", type="text", **{"data-commas": "", "inputmode": "decimal"}) }}
                   </div>
                   {% for err in form.monthly_debt_loans.errors %}
                     <div class="invalid-feedback d-block">{{ err }}</div>
@@ -775,7 +775,7 @@ Fill in your details and receive an instant AI-powered evaluation of your mortga
                   <div class="input-group">
                     <span class="input-group-text sqh-peso-prefix">&#8369;</span>
                     {{ form.budget_min(class="form-control sqh-form-control" + (" is-invalid" if form.budget_min.errors else ""),
-                                       id="budget_min", **{"data-commas": "", "inputmode": "decimal"}) }}
+                                       id="budget_min", type="text", **{"data-commas": "", "inputmode": "decimal"}) }}
                   </div>
                   {% for err in form.budget_min.errors %}
                     <div class="invalid-feedback d-block">{{ err }}</div>
@@ -791,7 +791,7 @@ Fill in your details and receive an instant AI-powered evaluation of your mortga
                   <div class="input-group">
                     <span class="input-group-text sqh-peso-prefix">&#8369;</span>
                     {{ form.budget_max(class="form-control sqh-form-control" + (" is-invalid" if form.budget_max.errors else ""),
-                                       id="budget_max", **{"data-commas": "", "inputmode": "decimal"}) }}
+                                       id="budget_max", type="text", **{"data-commas": "", "inputmode": "decimal"}) }}
                   </div>
                   {% for err in form.budget_max.errors %}
                     <div class="invalid-feedback d-block">{{ err }}</div>

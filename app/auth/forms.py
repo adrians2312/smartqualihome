@@ -131,7 +131,7 @@ class RegistrationForm(FlaskForm):
         places=2,
         filters=[_strip_commas],
         validators=[DataRequired(), NumberRange(min=1)],
-        render_kw={"placeholder": "e.g. 35000.00"},
+        render_kw={"placeholder": "e.g. 35000.00", "type": "text", "inputmode": "decimal"},
     )
     monthly_debt_loans = DecimalField(
         "Monthly Debt / Loan Payments (₱)",
@@ -139,7 +139,7 @@ class RegistrationForm(FlaskForm):
         default=0,
         filters=[_strip_commas],
         validators=[Optional(), NumberRange(min=0)],
-        render_kw={"placeholder": "Car loan, personal loan, credit card, etc."},
+        render_kw={"placeholder": "Car loan, personal loan, credit card, etc.", "type": "text", "inputmode": "decimal"},
     )
     # ── Step 2 — Employment ───────────────────────────────────────────────────
     employment_status = SelectField(
@@ -212,7 +212,7 @@ class RegistrationForm(FlaskForm):
         default=0,
         filters=[_strip_commas],
         validators=[DataRequired(message="Minimum budget is required."), NumberRange(min=1, message="Minimum budget must be greater than 0.")],
-        render_kw={"placeholder": "e.g. 1500000.00"},
+        render_kw={"placeholder": "e.g. 1500000.00", "type": "text", "inputmode": "decimal"},
     )
     budget_max = DecimalField(
         "Maximum Budget (P)",
@@ -220,7 +220,7 @@ class RegistrationForm(FlaskForm):
         default=0,
         filters=[_strip_commas],
         validators=[DataRequired(message="Maximum budget is required."), NumberRange(min=1, message="Maximum budget must be greater than 0.")],
-        render_kw={"placeholder": "e.g. 4000000.00"},
+        render_kw={"placeholder": "e.g. 4000000.00", "type": "text", "inputmode": "decimal"},
     )
 
     submit = SubmitField("Submit & Get Results")
