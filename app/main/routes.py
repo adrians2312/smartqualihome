@@ -596,6 +596,40 @@ def _compute_property_pricing(property_item: Property) -> dict:
     return _compute_pricing_values(_resolve_pricing_inputs(overrides))
 
 
+def _is_affordable_any_term(pricing: dict | None, client_income: float) -> bool:
+    """True if client income qualifies (Qualified or Conditionally Qualified)
+    for at least one loan term (5/10/15/20 yrs).
+
+    Uses per-term required_monthly_income vs client gross income with the
+    35/42 DTI threshold ratio (income >= req → Qualified;
+    income >= req * qualified/conditional → Conditionally Qualified).
+    Missing pricing/income never hides a card (fail-open).
+    """
+    if not pricing or client_income <= 0:
+        return True
+    req_map = pricing.get("required_monthly_income") or {}
+    req_vals = []
+    for year in ("5", "10", "15", "20"):
+        try:
+            val = float(req_map.get(year) or 0)
+        except (TypeError, ValueError):
+            val = 0
+        if val > 0:
+            req_vals.append(val)
+    if not req_vals:
+        return True
+    try:
+        qualified_max = _get_system_config_float("dti_qualified_max", 35.0)
+        conditional_max = _get_system_config_float("dti_conditional_max", 42.0)
+        ratio = (qualified_max / conditional_max) if conditional_max > 0 else 0.8333
+    except Exception:
+        ratio = 35.0 / 42.0
+    for req in req_vals:
+        if client_income >= req or client_income >= req * ratio:
+            return True
+    return False
+
+
 @main_bp.route("/admin/property/pricing-preview", methods=["GET"])
 @login_required
 def admin_property_pricing_preview():
@@ -757,6 +791,7 @@ def client_dashboard():
         qualify_form.employment_status.data    = profile.employment_type or ""
         qualify_form.tenure_months.data        = profile.tenure_months
         qualify_form.age.data                  = profile.age
+        qualify_form.dependents.data           = profile.dependents if profile.dependents is not None else 0
         qualify_form.budget_min.data           = profile.budget_min
         qualify_form.budget_max.data           = profile.budget_max
 
@@ -800,8 +835,12 @@ def client_dashboard():
     # Matched properties — filtered by max loanable + preferred model + budget.
     # max_loanable can legitimately be Decimal("0.00") (high-debt / not-qualified
     # clients) which is falsy, so we check > 0 explicitly rather than relying on
-    # bool(max_loanable). Fall back to all available props when the strict filters
-    # return nothing so the Recommended section is never silently empty.
+    # bool(max_loanable).
+    # NOTE: per-term affordability (Qualified / Conditionally Qualified on at
+    # least one of 5/10/15/20 yrs) is applied as a second pass after
+    # property_pricing_map is built below. Houses Not Qualified on ALL terms
+    # are excluded from Recommended. No fallback to all_props: an empty
+    # Recommended section renders its empty state by design.
     # Filtered in Python from all_props (already loaded) to avoid a second
     # full-catalog query.
     matched_props = []
@@ -823,8 +862,6 @@ def client_dashboard():
 
         matched_props = [p for p in all_props if _matches(p)]
         matched_props.sort(key=lambda p: (p.price if p.price is not None else 0))
-        if not matched_props:
-            matched_props = all_props  # preferences/budget too restrictive — show all
 
     # Agent contact details per property (for the Conditional Requirements modal).
     agent_contact_map = {}
@@ -939,6 +976,18 @@ def client_dashboard():
         prop_id: _compute_property_pricing(prop)
         for prop_id, prop in pricing_props_by_id.items()
     }
+    # Second-pass Recommended filter: keep only houses where the client is at
+    # least Conditionally Qualified on ONE of the 5/10/15/20-yr terms.
+    # Houses Not Qualified across all terms are excluded from Recommended.
+    try:
+        _client_income_val = float(profile.gross_income) if (profile and profile.gross_income) else 0.0
+    except (TypeError, ValueError):
+        _client_income_val = 0.0
+    if matched_props and _client_income_val > 0:
+        matched_props = [
+            p for p in matched_props
+            if _is_affordable_any_term(property_pricing_map.get(int(p.id)) if p.id else None, _client_income_val)
+        ]
     bought_pricing_map = {}
     for sale in bought_sales:
         prop = sale.property_item

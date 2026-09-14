@@ -31,6 +31,37 @@ def client_required(f):
 
 # --- Helpers -----------------------------------------------------------------
 
+_COMMA_NUMERIC_FIELDS = {"gross_monthly_income", "monthly_debt_loans", "budget_min", "budget_max"}
+
+
+def _strip_comma_fields(req, field_names: set | None = None) -> None:
+    """Remove thousands separators from numeric POST fields in-place.
+
+    Must run BEFORE the WTForms form object is constructed, because
+    DecimalField.process_formdata (Decimal("1,000")) executes before any
+    field-level `filters` and would otherwise record "Not a valid decimal
+    value." Safe to call on GET (no-op when form is empty).
+    """
+    targets = field_names or _COMMA_NUMERIC_FIELDS
+    try:
+        form = req.form
+        if not form:
+            return
+        from werkzeug.datastructures import ImmutableMultiDict
+        cleaned = []
+        touched = False
+        for key in form.keys():
+            for value in form.getlist(key):
+                if key in targets and isinstance(value, str) and "," in value:
+                    value = value.replace(",", "")
+                    touched = True
+                cleaned.append((key, value))
+        if touched:
+            req.form = ImmutableMultiDict(cleaned)
+    except Exception:
+        pass
+
+
 def _compute_result(gross_income: float, monthly_debt: float,
                     employment_type: str = "employed",
                     tenure_months: int = 0, age: int = 30,
@@ -56,6 +87,11 @@ def _compute_result(gross_income: float, monthly_debt: float,
 @login_required
 @client_required
 def qualify():
+    # Strip thousands separators BEFORE WTForms binds request.form.
+    # (DecimalField.process_formdata runs before field `filters`, so commas
+    # must be removed from the raw form data, not just via filters.)
+    if request.method == "POST":
+        _strip_comma_fields(request, {"gross_monthly_income", "monthly_debt_loans", "budget_min", "budget_max"})
     form     = QualifyForm()
     fail_step = 1
     legacy_pref_values = {
@@ -91,6 +127,7 @@ def qualify():
             form.employment_status.data    = profile.employment_type or ""
             form.tenure_months.data        = profile.tenure_months
             form.age.data                  = profile.age
+            form.dependents.data           = profile.dependents if profile.dependents is not None else 0
             preferred_model = (profile.preferred_type or "").strip()
             if preferred_model and not any(v == preferred_model for v, _ in form.preferred_type.choices):
                 form.preferred_type.choices.append((preferred_model, preferred_model))
@@ -115,6 +152,7 @@ def qualify():
         profile.employment_type    = form.employment_status.data
         profile.tenure_months      = form.tenure_months.data or 0
         profile.age                = form.age.data
+        profile.dependents         = int(form.dependents.data or 0)
         preferred_model = (form.preferred_type.data or "").strip()[:40]
         if preferred_model in legacy_pref_values:
             preferred_model = ""
@@ -128,7 +166,7 @@ def qualify():
             employment_type = form.employment_status.data or "employed",
             tenure_months   = int(form.tenure_months.data or 0),
             age             = int(form.age.data or 30),
-            dependents      = int(profile.dependents or 0),
+            dependents      = int(form.dependents.data or 0),
         )
         result = QualificationResult(
             user_id          = current_user.id,
@@ -161,7 +199,7 @@ def qualify():
     if form.errors:
         step_fields = [
             {"gross_monthly_income", "monthly_debt_loans", "sss_gsis_umid", "tin_no"},
-            {"employment_status", "tenure_months", "age"},
+            {"employment_status", "tenure_months", "age", "dependents"},
             {"preferred_type", "budget_min", "budget_max"},
         ]
         for idx, fields in enumerate(step_fields, 1):
@@ -217,19 +255,20 @@ def save_and_result():
     s1 = session[_SESSION_PREFIX + "step1"]
     s2 = session[_SESSION_PREFIX + "step2"]
 
-    gross  = float(s1.get("gross_monthly_income", 0) or 0)
-    debt   = float(s1.get("monthly_debt_loans", 0)   or 0)
+    gross  = float(str(s1.get("gross_monthly_income", 0) or 0).replace(",", ""))
+    debt   = float(str(s1.get("monthly_debt_loans", 0)   or 0).replace(",", ""))
     # -- Update / create normalized profile -----------------------------------
     profile = current_user.profile
     if not profile:
         profile = UserProfile(user_id=current_user.id)
         db.session.add(profile)
 
-    profile.gross_income    = Decimal(s1["gross_monthly_income"])
-    profile.monthly_loans   = Decimal(s1["monthly_debt_loans"])
+    profile.gross_income    = Decimal(str(s1["gross_monthly_income"]).replace(",", ""))
+    profile.monthly_loans   = Decimal(str(s1["monthly_debt_loans"]).replace(",", ""))
     profile.employment_type = s2["employment_status"]
     profile.tenure_months   = int(s2["tenure_months"])
     profile.age             = int(s2["age"])
+    profile.dependents      = int(s2.get("dependents", 0) or 0)
 
     # -- Compute result via C5.0 engine ----------------------------------------
     status, dti, max_loanable, score, factors_json = _compute_result(
@@ -238,7 +277,7 @@ def save_and_result():
         employment_type = s2.get("employment_status", "employed"),
         tenure_months   = int(s2.get("tenure_months", 0) or 0),
         age             = int(s2.get("age", 30) or 30),
-        dependents      = int(profile.dependents or 0),
+        dependents      = int(s2.get("dependents", 0) or 0),
     )
 
     result = QualificationResult(

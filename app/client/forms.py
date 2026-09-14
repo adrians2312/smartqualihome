@@ -7,12 +7,20 @@ from wtforms import (
 from wtforms.validators import DataRequired, Length, NumberRange, Optional, ValidationError
 
 
+def _strip_commas(value):
+    """WTForms filter: remove thousands separators before Decimal conversion."""
+    if isinstance(value, str):
+        return value.replace(",", "")
+    return value
+
+
 class Step1FinancialForm(FlaskForm):
     """Step 1 — Financial Capability."""
 
     gross_monthly_income = DecimalField(
         "Gross Monthly Income (₱)",
         places=2,
+        filters=[_strip_commas],
         validators=[DataRequired(), NumberRange(min=1)],
         render_kw={"placeholder": "e.g. 35000.00"},
     )
@@ -20,6 +28,7 @@ class Step1FinancialForm(FlaskForm):
         "Monthly Debt / Loan Payments (₱)",
         places=2,
         default=0,
+        filters=[_strip_commas],
         validators=[Optional(), NumberRange(min=0)],
         render_kw={"placeholder": "Car loan, personal loan, credit card, etc."},
     )
@@ -53,6 +62,11 @@ class Step2EmploymentForm(FlaskForm):
         validators=[DataRequired(), NumberRange(min=18, max=80, message="Age must be between 18 and 80.")],
         render_kw={"placeholder": "e.g. 28"},
     )
+    dependents = IntegerField(
+        "Number of Dependents",
+        validators=[Optional(), NumberRange(min=0, max=20, message="Dependents must be between 0 and 20.")],
+        render_kw={"placeholder": "e.g. 0"},
+    )
     submit = SubmitField("Next: Housing Preferences →")
 
 
@@ -63,6 +77,7 @@ class QualifyForm(FlaskForm):
     gross_monthly_income = DecimalField(
         "Gross Monthly Income (₱)",
         places=2,
+        filters=[_strip_commas],
         validators=[DataRequired(), NumberRange(min=1)],
         render_kw={"placeholder": "e.g. 35000.00"},
     )
@@ -70,6 +85,7 @@ class QualifyForm(FlaskForm):
         "Monthly Debt / Loan Payments (₱)",
         places=2,
         default=0,
+        filters=[_strip_commas],
         validators=[Optional(), NumberRange(min=0)],
         render_kw={"placeholder": "Car loan, personal loan, credit card, etc."},
     )
@@ -119,6 +135,11 @@ class QualifyForm(FlaskForm):
         ],
         render_kw={"placeholder": "e.g. 28"},
     )
+    dependents = IntegerField(
+        "Number of Dependents",
+        validators=[Optional(), NumberRange(min=0, max=20, message="Dependents must be between 0 and 20.")],
+        render_kw={"placeholder": "e.g. 0"},
+    )
 
     # ── Step 3: Model Preferences ──────────────────────────────────────────
     preferred_type = SelectField(
@@ -133,6 +154,7 @@ class QualifyForm(FlaskForm):
         "Minimum Budget (₱)",
         places=2,
         default=0,
+        filters=[_strip_commas],
         validators=[DataRequired(message="Minimum budget is required."), NumberRange(min=1, message="Minimum budget must be greater than 0.")],
         render_kw={"placeholder": "e.g. 1500000.00"},
     )
@@ -140,6 +162,7 @@ class QualifyForm(FlaskForm):
         "Maximum Budget (₱)",
         places=2,
         default=0,
+        filters=[_strip_commas],
         validators=[DataRequired(message="Maximum budget is required."), NumberRange(min=1, message="Maximum budget must be greater than 0.")],
         render_kw={"placeholder": "e.g. 4000000.00"},
     )

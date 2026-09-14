@@ -231,6 +231,25 @@ def register():
     if current_user.is_authenticated:
         return redirect(_dashboard_url(current_user.role))
 
+    if request.method == "POST":
+        # Strip thousands separators BEFORE WTForms binds request.form
+        # (DecimalField.process_formdata runs before field `filters`).
+        try:
+            from werkzeug.datastructures import ImmutableMultiDict
+            _targets = {"gross_monthly_income", "monthly_debt_loans", "budget_min", "budget_max"}
+            if request.form:
+                _cleaned, _touched = [], False
+                for _key in request.form.keys():
+                    for _value in request.form.getlist(_key):
+                        if _key in _targets and isinstance(_value, str) and "," in _value:
+                            _value = _value.replace(",", "")
+                            _touched = True
+                        _cleaned.append((_key, _value))
+                if _touched:
+                    request.form = ImmutableMultiDict(_cleaned)
+        except Exception:
+            pass
+
     form = RegistrationForm()
     available_models = (db.session.query(Property.name)
                         .filter(Property.status == "available")
@@ -426,7 +445,12 @@ def forgot_password():
                 if sent:
                     current_app.logger.info("Password reset email sent to %s via SMTP.", email)
                 else:
-                    current_app.logger.warning("Password reset email fallback mode for %s (SMTP not sent). Link: %s", email, reset_url)
+                    # Never log the reset URL (token equivalent) in production.
+                    if current_app.debug:
+                        current_app.logger.warning("Password reset email fallback mode for %s (SMTP not sent). Link: %s | err=%s", email, reset_url, mail_error)
+                    else:
+                        current_app.logger.warning("Password reset email failed for %s (SMTP not sent). err=%s", email, mail_error)
+                        flash("Email service is temporarily unavailable. Please contact support and try again later.", "warning")
             if is_ajax:
                 # Only expose link in development fallback when email was not sent.
                 dev_link = reset_url if (reset_url and not sent) else None

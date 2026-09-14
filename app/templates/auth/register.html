@@ -531,7 +531,7 @@ Fill in your details and receive an instant AI-powered evaluation of your mortga
                   <div class="input-group">
                     <span class="input-group-text sqh-peso-prefix">&#8369;</span>
                     {{ form.gross_monthly_income(class="form-control sqh-form-control" + (" is-invalid" if form.gross_monthly_income.errors else ""),
-                                                 id="gross_monthly_income") }}
+                                                 id="gross_monthly_income", **{"data-commas": "", "inputmode": "decimal"}) }}
                   </div>
                   {% for err in form.gross_monthly_income.errors %}
                     <div class="invalid-feedback d-block">{{ err }}</div>
@@ -545,7 +545,7 @@ Fill in your details and receive an instant AI-powered evaluation of your mortga
                   <div class="input-group">
                     <span class="input-group-text sqh-peso-prefix">&#8369;</span>
                     {{ form.monthly_debt_loans(class="form-control sqh-form-control" + (" is-invalid" if form.monthly_debt_loans.errors else ""),
-                                               id="monthly_debt_loans") }}
+                                               id="monthly_debt_loans", **{"data-commas": "", "inputmode": "decimal"}) }}
                   </div>
                   {% for err in form.monthly_debt_loans.errors %}
                     <div class="invalid-feedback d-block">{{ err }}</div>
@@ -775,7 +775,7 @@ Fill in your details and receive an instant AI-powered evaluation of your mortga
                   <div class="input-group">
                     <span class="input-group-text sqh-peso-prefix">&#8369;</span>
                     {{ form.budget_min(class="form-control sqh-form-control" + (" is-invalid" if form.budget_min.errors else ""),
-                                       id="budget_min") }}
+                                       id="budget_min", **{"data-commas": "", "inputmode": "decimal"}) }}
                   </div>
                   {% for err in form.budget_min.errors %}
                     <div class="invalid-feedback d-block">{{ err }}</div>
@@ -791,7 +791,7 @@ Fill in your details and receive an instant AI-powered evaluation of your mortga
                   <div class="input-group">
                     <span class="input-group-text sqh-peso-prefix">&#8369;</span>
                     {{ form.budget_max(class="form-control sqh-form-control" + (" is-invalid" if form.budget_max.errors else ""),
-                                       id="budget_max") }}
+                                       id="budget_max", **{"data-commas": "", "inputmode": "decimal"}) }}
                   </div>
                   {% for err in form.budget_max.errors %}
                     <div class="invalid-feedback d-block">{{ err }}</div>
@@ -1234,14 +1234,19 @@ Fill in your details and receive an instant AI-powered evaluation of your mortga
   /* ══════════════════════════════════════════════════════════════
      STEP 2 — Financial & Employment validators
   ══════════════════════════════════════════════════════════════ */
+  function gqNum(v) {
+    var s = String(v == null ? '' : v).replace(/,/g, '').trim();
+    if (!s) return NaN;
+    return parseFloat(s);
+  }
   function vGross(force) {
-    var v = grossEl.value.trim(), n = parseFloat(v);
+    var v = grossEl.value.trim(), n = gqNum(v);
     if (!v) { if (force) setInvalid(grossEl, grossErr, 'Gross monthly income is required.'); else clearState(grossEl, grossErr); return false; }
     if (isNaN(n) || n <= 0) { setInvalid(grossEl, grossErr, 'Income must be greater than ₱0.'); return false; }
     setValid(grossEl, grossErr); return true;
   }
   function vDebt() {
-    var v = debtEl.value.trim(), n = parseFloat(v);
+    var v = debtEl.value.trim(), n = gqNum(v);
     if (!v) { clearState(debtEl, debtErr); return true; }
     if (isNaN(n) || n < 0) { setInvalid(debtEl, debtErr, 'Debt amount cannot be negative.'); return false; }
     setValid(debtEl, debtErr); return true;
@@ -1286,8 +1291,8 @@ Fill in your details and receive an instant AI-powered evaluation of your mortga
     var show = !!force;
     var minRaw = (budgetMinEl && budgetMinEl.value || '').trim();
     var maxRaw = (budgetMaxEl && budgetMaxEl.value || '').trim();
-    var minVal = parseFloat(minRaw);
-    var maxVal = parseFloat(maxRaw);
+    var minVal = gqNum(minRaw);
+    var maxVal = gqNum(maxRaw);
     var hasTouched = liveTouched.step3Submitted || liveTouched.budgetMin || liveTouched.budgetMax;
 
     if (!show && !hasTouched) {
@@ -1450,8 +1455,8 @@ Fill in your details and receive an instant AI-powered evaluation of your mortga
   var sidebarDtiStat = document.getElementById('sidebarDtiStatus');
 
   function updateDti() {
-    var g = parseFloat(grossEl.value) || 0;
-    var d = parseFloat(debtEl.value)  || 0;
+    var g = gqNum(grossEl.value) || 0;
+    var d = gqNum(debtEl.value)  || 0;
     var statusKey = (statusEl.value || '').trim().toLowerCase();
     var tenureMonths = parseInt(tenureEl.value || '0', 10) || 0;
     var ageValue = parseInt(ageEl.value || '0', 10) || 0;

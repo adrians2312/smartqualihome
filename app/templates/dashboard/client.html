@@ -162,9 +162,14 @@
     return true;
   }
 
+  function qmNum(v) {
+    var s = String(v == null ? '' : v).replace(/,/g, '').trim();
+    if (!s) return NaN;
+    return parseFloat(s);
+  }
   function qmValGross(force) {
     var v = qmGross ? qmGross.value.trim() : '';
-    var n = parseFloat(v);
+    var n = qmNum(v);
     if (!v) {
       if (force) qmSetInvalid(qmGross, qmGrossErr, 'Gross monthly income is required.');
       else qmClearState(qmGross, qmGrossErr);
@@ -175,7 +180,7 @@
   }
   function qmValDebt() {
     var v = qmDebt ? qmDebt.value.trim() : '';
-    var n = parseFloat(v);
+    var n = qmNum(v);
     if (!v) { qmClearState(qmDebt, qmDebtErr); return true; }
     if (isNaN(n) || n < 0) { qmSetInvalid(qmDebt, qmDebtErr, 'Monthly debt cannot be negative.'); return false; }
     qmSetValid(qmDebt, qmDebtErr); return true;
@@ -188,8 +193,8 @@
   var qmDtiNote = document.getElementById('qm-dtiNote');
 
   function qmUpdateDti() {
-    var g = parseFloat(qmGross ? qmGross.value : 0) || 0;
-    var d = parseFloat(qmDebt  ? qmDebt.value  : 0) || 0;
+    var g = qmNum(qmGross ? qmGross.value : 0) || 0;
+    var d = qmNum(qmDebt  ? qmDebt.value  : 0) || 0;
     var statusKey = (qmStat && qmStat.value ? qmStat.value : '').trim().toLowerCase();
     var tenureMonths = parseInt(qmTenure && qmTenure.value ? qmTenure.value : '0', 10) || 0;
     var ageValue = parseInt(qmAge && qmAge.value ? qmAge.value : '0', 10) || 0;
@@ -254,9 +259,11 @@
   var qmStat      = document.getElementById('qm-status');
   var qmTenure    = document.getElementById('qm-tenure');
   var qmAge       = document.getElementById('qm-age');
+  var qmDependents = document.getElementById('qm-dependents');
   var qmStatErr   = document.getElementById('qm-status-err');
   var qmTenureErr = document.getElementById('qm-tenure-err');
   var qmAgeErr    = document.getElementById('qm-age-err');
+  var qmDependentsErr = document.getElementById('qm-dependents-err');
   var qmTenHint   = document.getElementById('qm-tenure-hint');
   var qmAgeHint   = document.getElementById('qm-age-hint');
 
@@ -302,6 +309,14 @@
     if (n > 80)   { qmSetInvalid(qmAge, qmAgeErr, 'Age must not exceed 80 years.'); qmUpdAgeHint(null); return false; }
     qmSetValid(qmAge, qmAgeErr); qmUpdAgeHint(n); return true;
   }
+  function qmValDependents() {
+    if (!qmDependents) return true;
+    var v = qmDependents.value.trim();
+    if (!v) { qmClearState(qmDependents, qmDependentsErr); return true; }
+    var n = parseInt(v, 10);
+    if (isNaN(n) || n < 0 || n > 20) { qmSetInvalid(qmDependents, qmDependentsErr, 'Dependents must be between 0 and 20.'); return false; }
+    qmSetValid(qmDependents, qmDependentsErr); return true;
+  }
   function qmUpdAgeHint(age) {
     if (!qmAgeHint) return;
     if (age === null) { qmAgeHint.innerHTML = 'Must be 18\u201380 years old'; return; }
@@ -320,6 +335,10 @@
   if (qmAge) {
     qmAge.addEventListener('input', function () { qmValAge(false); qmUpdateDti(); });
     qmAge.addEventListener('blur',  function () { qmValAge(false); });
+  }
+  if (qmDependents) {
+    qmDependents.addEventListener('input', function () { qmValDependents(); });
+    qmDependents.addEventListener('blur',  function () { qmValDependents(); });
   }
 
   /* -- Step 4 budget validator -- */
@@ -340,7 +359,7 @@
 
   var qmTrackedFieldIds = [
     'qm-gross', 'qm-debt', 'qm-umid', 'qm-tin',
-    'qm-status', 'qm-tenure', 'qm-age',
+    'qm-status', 'qm-tenure', 'qm-age', 'qm-dependents',
     'qm-type', 'qm-bmin', 'qm-bmax'
   ];
   var qmInitialValues = {};
@@ -362,6 +381,7 @@
     qmClearState(qmStat, qmStatErr);
     qmClearState(qmTenure, qmTenureErr);
     qmClearState(qmAge, qmAgeErr);
+    qmClearState(qmDependents, qmDependentsErr);
     qmClearState(qmType, qmTypeErr);
     qmClearState(qmBmin, qmBminErr);
     qmClearState(qmBmax, qmBmaxErr);
@@ -381,6 +401,7 @@
     qmUpdateDti();
     qmValTenure();
     qmValAge(false);
+    qmValDependents();
   }
 
   function qmClearForNewAssessment() {
@@ -456,7 +477,7 @@
   /* -- Per-step validation -- */
   function qmValStep(n) {
     if (n === 1) { var ok = qmValGross(true); qmValDebt(); var u = qmValUmid(); var t = qmValTin(); return ok && u && t; }
-    if (n === 2) { var a = qmValStatus(true); qmValTenure(); var b = qmValAge(true); return a && b; }
+    if (n === 2) { var a = qmValStatus(true); qmValTenure(); var b = qmValAge(true); var c = qmValDependents(); return a && b && c; }
     if (n === 3) { qmTouched.step3Submitted = true; return qmValHousing(true); }
     return true;
   }
@@ -479,6 +500,7 @@
       employment_status: [qmStat, qmStatErr],
       tenure_months: [qmTenure, qmTenureErr],
       age: [qmAge, qmAgeErr],
+      dependents: [qmDependents, qmDependentsErr],
       preferred_type: [qmType, qmTypeErr],
       budget_min: [qmBmin, qmBminErr],
       budget_max: [qmBmax, qmBmaxErr],
@@ -591,6 +613,11 @@
       if (errDiv) errDiv.classList.add('d-none');
       if (qmModeInp) qmModeInp.value = 'reassess';
     });
+
+    // Bind comma formatting (main.js) to modal inputs, incl. dynamically shown state.
+    if (typeof sqhBindNumericFormatting === 'function') {
+      try { sqhBindNumericFormatting(qmModal); } catch (_) {}
+    }
   }
 
   /* -- Init -- */
@@ -598,6 +625,7 @@
   if (qmStat   && qmStat.value)   qmValStatus(false);
   if (qmTenure && qmTenure.value) qmValTenure();
   if (qmAge    && qmAge.value)    qmValAge(false);
+  if (qmDependents && qmDependents.value) qmValDependents();
   document.querySelectorAll('.js-dti-fill[data-dti-width]').forEach(function (el) {
     var width = parseFloat(el.getAttribute('data-dti-width') || '0');
     if (isNaN(width)) width = 0;
@@ -1285,7 +1313,7 @@
               </div>
               <div class="col-md-4"><label class="form-label">Birth Place</label><input id="pbBirthPlace" class="form-control buyer-icon-input" value="{{ pb.birthplace if pb and pb.birthplace else '' }}"></div>
               <div class="col-md-4"><label class="form-label">Tax Identification No (TIN)</label><input id="pbTin" class="form-control buyer-icon-input" value="{{ pb.tin_no if pb and pb.tin_no else '' }}" inputmode="numeric" maxlength="15" placeholder="000-000-000-000"></div>
-              <div class="col-md-4"><label class="form-label">Gross Monthly Income</label><input id="pbGrossIncome" type="number" min="0" step="0.01" class="form-control buyer-icon-input" value="{{ pb.gross_income if pb and pb.gross_income is not none else '' }}"></div>
+              <div class="col-md-4"><label class="form-label">Gross Monthly Income</label><input id="pbGrossIncome" type="text" data-commas inputmode="decimal" class="form-control buyer-icon-input" value="{{ pb.gross_income if pb and pb.gross_income is not none else '' }}"></div>
 
               <div class="col-md-4">
                 <label class="form-label">With Dependents</label>
@@ -2088,7 +2116,7 @@
                     {{ qualify_form.gross_monthly_income.label(class="sqh-form-label") }}
                     <div class="input-group">
                       <span class="input-group-text sqh-peso-prefix">&#8369;</span>
-                      {{ qualify_form.gross_monthly_income(class="form-control sqh-form-control", id="qm-gross") }}
+                      {{ qualify_form.gross_monthly_income(class="form-control sqh-form-control", id="qm-gross", **{"data-commas": "", "inputmode": "decimal"}) }}
                     </div>
                     <div class="sqh-live-error" id="qm-gross-err"></div>
                   </div>
@@ -2096,7 +2124,7 @@
                     {{ qualify_form.monthly_debt_loans.label(class="sqh-form-label") }}
                     <div class="input-group">
                       <span class="input-group-text sqh-peso-prefix">&#8369;</span>
-                      {{ qualify_form.monthly_debt_loans(class="form-control sqh-form-control", id="qm-debt") }}
+                      {{ qualify_form.monthly_debt_loans(class="form-control sqh-form-control", id="qm-debt", **{"data-commas": "", "inputmode": "decimal"}) }}
                     </div>
                     <div class="sqh-live-error" id="qm-debt-err"></div>
                   </div>
@@ -2153,6 +2181,15 @@
                     <div class="form-text small text-muted" id="qm-age-hint">Must be 18&ndash;80 years old</div>
                     <div class="sqh-live-error" id="qm-age-err"></div>
                   </div>
+                  <div class="col-sm-6">
+                    {{ qualify_form.dependents.label(class="sqh-form-label") }}
+                    <div class="input-group sqh-input-group">
+                      <span class="input-group-text sqh-ig-text"><i class="fas fa-children"></i></span>
+                      {{ qualify_form.dependents(class="form-control sqh-form-control", id="qm-dependents", min="0", max="20") }}
+                    </div>
+                    <div class="form-text small text-muted">Number of dependents (0&ndash;20)</div>
+                    <div class="sqh-live-error" id="qm-dependents-err"></div>
+                  </div>
                 </div>
               </div>
 
@@ -2178,7 +2215,7 @@
                     {{ qualify_form.budget_min.label(class="sqh-form-label") }}
                     <div class="input-group">
                       <span class="input-group-text sqh-peso-prefix">&#8369;</span>
-                      {{ qualify_form.budget_min(class="form-control sqh-form-control", id="qm-bmin") }}
+                      {{ qualify_form.budget_min(class="form-control sqh-form-control", id="qm-bmin", **{"data-commas": "", "inputmode": "decimal"}) }}
                     </div>
                     <div class="sqh-live-error" id="qm-bmin-err"></div>
                   </div>
@@ -2186,7 +2223,7 @@
                     {{ qualify_form.budget_max.label(class="sqh-form-label") }}
                     <div class="input-group">
                       <span class="input-group-text sqh-peso-prefix">&#8369;</span>
-                      {{ qualify_form.budget_max(class="form-control sqh-form-control", id="qm-bmax") }}
+                      {{ qualify_form.budget_max(class="form-control sqh-form-control", id="qm-bmax", **{"data-commas": "", "inputmode": "decimal"}) }}
                     </div>
                     <div class="sqh-live-error" id="qm-bmax-err"></div>
                   </div>
@@ -2610,10 +2647,6 @@
               {% else %}
               <div class="prop-card-img-placeholder"><i class="fas fa-home"></i></div>
               {% endif %}
-              {% if qual_result and qual_result.similarity_score is not none %}
-              {% set sim_score = qual_result.similarity_score %}
-              <span class="sim-badge sim-badge--{{ 'high' if sim_score >= 0.70 else ('moderate' if sim_score >= 0.40 else 'low') }}"><i class="fas fa-user-check"></i>{{ 'High' if sim_score >= 0.70 else ('Moderate' if sim_score >= 0.40 else 'Low') }} Similarity</span>
-              {% endif %}
               <span class="prop-card-img-count"><i class="fas fa-images me-1"></i>{{ img_count }}</span>
               <div class="prop-card-actions">
                 <button type="button" class="sub-card-action-btn prop-view-btn-icon" title="View"><i class="fas fa-eye"></i></button>
@@ -2686,7 +2719,11 @@
         {% set has_request = p.id in requested_prop_ids %}
         {% set detail_status = detail_request_status_by_property.get(p.id, 'none') %}
         {% set pricing = property_pricing_map.get(p.id, {}) %}
-        {% set is_eligible = qual_result and qual_result.max_loanable and (p.price|float <= qual_result.max_loanable|float) %}
+        {% set client_income = profile.gross_income|float if profile and profile.gross_income else 0 %}
+        {% set req_income_map = pricing.required_monthly_income if pricing and pricing.required_monthly_income else {} %}
+        {% set is_eligible_any_year = client_income > 0 and req_income_map and (client_income >= (req_income_map.get('5', 0)|float) or client_income >= (req_income_map.get('10', 0)|float) or client_income >= (req_income_map.get('15', 0)|float) or client_income >= (req_income_map.get('20', 0)|float)) %}
+        {% set is_eligible = is_eligible_any_year %}
+        {% if is_eligible %}
         <div class="col-12 col-sm-6 col-xl-4">
           <div class="prop-card prop-card-clickable"
                data-prop-id="{{ p.id }}"
@@ -2717,10 +2754,6 @@
               <img src="{{ first_img | img_src }}" alt="{{ p.name }}" class="prop-card-img" loading="lazy">
               {% else %}
               <div class="prop-card-img-placeholder"><i class="fas fa-home"></i></div>
-              {% endif %}
-              {% if qual_result and qual_result.similarity_score is not none %}
-              {% set sim_score = qual_result.similarity_score %}
-              <span class="sim-badge sim-badge--{{ 'high' if sim_score >= 0.70 else ('moderate' if sim_score >= 0.40 else 'low') }}"><i class="fas fa-user-check"></i>{{ 'High' if sim_score >= 0.70 else ('Moderate' if sim_score >= 0.40 else 'Low') }} Similarity</span>
               {% endif %}
               <span class="prop-card-img-count"><i class="fas fa-images me-1"></i>{{ img_count }}</span>
               <div class="prop-card-actions">
@@ -2767,6 +2800,7 @@
             </div>
           </div>
         </div>
+        {% endif %}
         {% endfor %}
       </div>
       <div id="homeRecommendedEmpty" class="cp-empty-state d-none mb-4">
@@ -3051,10 +3085,6 @@
               <img src="{{ first_img | img_src }}" alt="{{ p.name }}" class="prop-card-img" loading="lazy">
               {% else %}
               <div class="prop-card-img-placeholder"><i class="fas fa-home"></i></div>
-              {% endif %}
-              {% if qual_result and qual_result.similarity_score is not none %}
-              {% set sim_score = qual_result.similarity_score %}
-              <span class="sim-badge sim-badge--{{ 'high' if sim_score >= 0.70 else ('moderate' if sim_score >= 0.40 else 'low') }}"><i class="fas fa-user-check"></i>{{ 'High' if sim_score >= 0.70 else ('Moderate' if sim_score >= 0.40 else 'Low') }} Similarity</span>
               {% endif %}
               <span class="prop-card-img-count"><i class="fas fa-images me-1"></i>{{ img_count }}</span>
               <div class="prop-card-actions">

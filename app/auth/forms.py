@@ -10,6 +10,13 @@ from wtforms.validators import (
 from ..models import User
 
 
+def _strip_commas(value):
+    """WTForms filter: remove thousands separators before Decimal conversion."""
+    if isinstance(value, str):
+        return value.replace(",", "")
+    return value
+
+
 class LoginForm(FlaskForm):
     email    = StringField("Email Address",
                            validators=[DataRequired(), Email()])
@@ -122,6 +129,7 @@ class RegistrationForm(FlaskForm):
     gross_monthly_income = DecimalField(
         "Gross Monthly Income (₱)",
         places=2,
+        filters=[_strip_commas],
         validators=[DataRequired(), NumberRange(min=1)],
         render_kw={"placeholder": "e.g. 35000.00"},
     )
@@ -129,6 +137,7 @@ class RegistrationForm(FlaskForm):
         "Monthly Debt / Loan Payments (₱)",
         places=2,
         default=0,
+        filters=[_strip_commas],
         validators=[Optional(), NumberRange(min=0)],
         render_kw={"placeholder": "Car loan, personal loan, credit card, etc."},
     )
@@ -201,6 +210,7 @@ class RegistrationForm(FlaskForm):
         "Minimum Budget (P)",
         places=2,
         default=0,
+        filters=[_strip_commas],
         validators=[DataRequired(message="Minimum budget is required."), NumberRange(min=1, message="Minimum budget must be greater than 0.")],
         render_kw={"placeholder": "e.g. 1500000.00"},
     )
@@ -208,6 +218,7 @@ class RegistrationForm(FlaskForm):
         "Maximum Budget (P)",
         places=2,
         default=0,
+        filters=[_strip_commas],
         validators=[DataRequired(message="Maximum budget is required."), NumberRange(min=1, message="Maximum budget must be greater than 0.")],
         render_kw={"placeholder": "e.g. 4000000.00"},
     )

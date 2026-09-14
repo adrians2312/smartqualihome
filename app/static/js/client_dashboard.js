@@ -1047,8 +1047,17 @@
       var recommendedGrid = document.getElementById('homeRecommendedGrid');
       var recommendedEmpty = document.getElementById('homeRecommendedEmpty');
       if (recommendedGrid && recommendedEmpty) {
-        var rCount = recommendedGrid.querySelectorAll('.col-12.col-sm-6.col-xl-4').length;
-        recommendedEmpty.classList.toggle('d-none', rCount > 0);
+        // Hide Recommended cards that are Not Qualified on every loan term
+        // (badge was recomputed by updateHomeCardBadge above). Show the
+        // empty state when nothing remains visible.
+        var rVisible = 0;
+        recommendedGrid.querySelectorAll('.col-12.col-sm-6.col-xl-4').forEach(function (col) {
+          var badge = col.querySelector('.js-home-qual-badge');
+          var isNotQualified = !!(badge && badge.classList.contains('badge-not-qualified'));
+          col.classList.toggle('d-none', isNotQualified);
+          if (!isNotQualified) rVisible += 1;
+        });
+        recommendedEmpty.classList.toggle('d-none', rVisible > 0);
       }
 
       var visitsGrid = document.getElementById('homeRecentVisitsGrid');
