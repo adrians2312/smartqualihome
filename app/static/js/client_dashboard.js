@@ -1034,12 +1034,16 @@
       var qualifiedGrid = document.getElementById('homeQualifiedGrid');
       var qualifiedEmpty = document.getElementById('homeQualifiedEmpty');
       if (qualifiedGrid && qualifiedEmpty) {
+        // 09/15/26: Qualified Models shows Qualified AND Conditionally Qualified
+        // (matches backend _is_affordable_any_term + server template). Hide only
+        // Not Qualified cards; the old check hid conditional cards too, which
+        // emptied the section for conditionally-qualified clients.
         var qVisible = 0;
         qualifiedGrid.querySelectorAll('.home-qualified-card-col').forEach(function (col) {
           var badge = col.querySelector('.js-home-qual-badge');
-          var isQualified = !!(badge && badge.classList.contains('badge-qualified'));
-          col.classList.toggle('d-none', !isQualified);
-          if (isQualified) qVisible += 1;
+          var isNotQualified = !!(badge && badge.classList.contains('badge-not-qualified'));
+          col.classList.toggle('d-none', isNotQualified);
+          if (!isNotQualified) qVisible += 1;
         });
         qualifiedEmpty.classList.toggle('d-none', qVisible > 0);
       }

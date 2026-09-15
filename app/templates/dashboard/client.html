@@ -2613,7 +2613,16 @@
         {% set pricing = property_pricing_map.get(p.id, {}) %}
         {% set client_income = profile.gross_income|float if profile and profile.gross_income else 0 %}
         {% set req_income_map = pricing.required_monthly_income if pricing and pricing.required_monthly_income else {} %}
-        {% set is_eligible_any_year = client_income > 0 and req_income_map and (client_income >= (req_income_map.get('5', 0)|float) or client_income >= (req_income_map.get('10', 0)|float) or client_income >= (req_income_map.get('15', 0)|float) or client_income >= (req_income_map.get('20', 0)|float)) %}
+        {# 09/15/26: conditional-aware + fail-open. Backend _is_affordable_any_term() keeps houses where income >= req*35/42 (Conditionally Qualified). The old strict check (income >= req) hid conditional houses server-side, emptying both sections. Missing req data or missing income fails open (show card), matching the backend second-pass guard. #}
+        {% set q_max = (live_meter_cfg.get('dti_qualified_max', 35)|float) if live_meter_cfg else 35.0 %}
+        {% set c_max = (live_meter_cfg.get('dti_conditional_max', 42)|float) if live_meter_cfg else 42.0 %}
+        {% set cond_ratio = (q_max / c_max) if c_max > 0 else 0.8333 %}
+        {% set req5 = req_income_map.get('5', 0)|float %}
+        {% set req10 = req_income_map.get('10', 0)|float %}
+        {% set req15 = req_income_map.get('15', 0)|float %}
+        {% set req20 = req_income_map.get('20', 0)|float %}
+        {% set has_req = (req5 > 0) or (req10 > 0) or (req15 > 0) or (req20 > 0) %}
+        {% set is_eligible_any_year = (not has_req) or (client_income <= 0) or (req5 > 0 and client_income >= req5 * cond_ratio) or (req10 > 0 and client_income >= req10 * cond_ratio) or (req15 > 0 and client_income >= req15 * cond_ratio) or (req20 > 0 and client_income >= req20 * cond_ratio) %}
         {% set is_eligible = is_eligible_any_year %}
         {% if is_eligible %}
         <div class="col-12 col-sm-6 col-xl-4 home-qualified-card-col">
@@ -2721,7 +2730,16 @@
         {% set pricing = property_pricing_map.get(p.id, {}) %}
         {% set client_income = profile.gross_income|float if profile and profile.gross_income else 0 %}
         {% set req_income_map = pricing.required_monthly_income if pricing and pricing.required_monthly_income else {} %}
-        {% set is_eligible_any_year = client_income > 0 and req_income_map and (client_income >= (req_income_map.get('5', 0)|float) or client_income >= (req_income_map.get('10', 0)|float) or client_income >= (req_income_map.get('15', 0)|float) or client_income >= (req_income_map.get('20', 0)|float)) %}
+        {# 09/15/26: conditional-aware + fail-open. Backend _is_affordable_any_term() keeps houses where income >= req*35/42 (Conditionally Qualified). The old strict check (income >= req) hid conditional houses server-side, emptying both sections. Missing req data or missing income fails open (show card), matching the backend second-pass guard. #}
+        {% set q_max = (live_meter_cfg.get('dti_qualified_max', 35)|float) if live_meter_cfg else 35.0 %}
+        {% set c_max = (live_meter_cfg.get('dti_conditional_max', 42)|float) if live_meter_cfg else 42.0 %}
+        {% set cond_ratio = (q_max / c_max) if c_max > 0 else 0.8333 %}
+        {% set req5 = req_income_map.get('5', 0)|float %}
+        {% set req10 = req_income_map.get('10', 0)|float %}
+        {% set req15 = req_income_map.get('15', 0)|float %}
+        {% set req20 = req_income_map.get('20', 0)|float %}
+        {% set has_req = (req5 > 0) or (req10 > 0) or (req15 > 0) or (req20 > 0) %}
+        {% set is_eligible_any_year = (not has_req) or (client_income <= 0) or (req5 > 0 and client_income >= req5 * cond_ratio) or (req10 > 0 and client_income >= req10 * cond_ratio) or (req15 > 0 and client_income >= req15 * cond_ratio) or (req20 > 0 and client_income >= req20 * cond_ratio) %}
         {% set is_eligible = is_eligible_any_year %}
         {% if is_eligible %}
         <div class="col-12 col-sm-6 col-xl-4">

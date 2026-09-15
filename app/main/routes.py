@@ -832,7 +832,7 @@ def client_dashboard():
     qualify_form.preferred_type.choices = model_name_choices
     qualify_form.preferred_type.data = selected_model_name
 
-    # Matched properties — filtered by max loanable + preferred model + budget.
+    # Matched properties — filtered by max loanable + preferred model + budget max.
     # max_loanable can legitimately be Decimal("0.00") (high-debt / not-qualified
     # clients) which is falsy, so we check > 0 explicitly rather than relying on
     # bool(max_loanable).
@@ -841,20 +841,21 @@ def client_dashboard():
     # property_pricing_map is built below. Houses Not Qualified on ALL terms
     # are excluded from Recommended. No fallback to all_props: an empty
     # Recommended section renders its empty state by design.
+    # NOTE (09/15/26, Issue 3): budget_min is a SOFT preference, not a hard
+    # exclusion filter. Houses priced below budget_min still match when the
+    # client can afford them (price <= budget_max AND income-qualified).
+    # Only budget_max is enforced as a hard upper bound (client won't overspend).
     # Filtered in Python from all_props (already loaded) to avoid a second
     # full-catalog query.
     matched_props = []
     if qual_result:
         max_loanable_val = float(qual_result.max_loanable) if (qual_result.max_loanable and float(qual_result.max_loanable) > 0) else None
-        budget_min_val = float(profile.budget_min) if (profile and profile.budget_min and float(profile.budget_min) > 0) else None
         budget_max_val = float(profile.budget_max) if (profile and profile.budget_max and float(profile.budget_max) > 0) else None
 
         def _matches(p):
             if max_loanable_val is not None and not (p.price is not None and float(p.price) <= max_loanable_val):
                 return False
             if selected_model_name and (p.name or "") != selected_model_name:
-                return False
-            if budget_min_val is not None and not (p.price is not None and float(p.price) >= budget_min_val):
                 return False
             if budget_max_val is not None and not (p.price is not None and float(p.price) <= budget_max_val):
                 return False
