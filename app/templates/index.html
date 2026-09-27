@@ -1226,7 +1226,8 @@ QUALIHOME is Annregar Realty’s official pre-qualification platform. Powered by
 
     function openLpImagePreview() {
       if (!previewModal || !previewImg || !imgEl || !imgEl.src) return;
-      previewImg.src = imgEl.src;
+      SqhImageCache.swap(previewImg, imgEl.src);
+      SqhImageCache.preloadAll(lpImages.map(lpImgSrc));
       previewImg.alt = imgEl.alt || '';
       previewZoomCtrl.resetZoom();
       previewModal.classList.add('active');
@@ -1269,11 +1270,9 @@ QUALIHOME is Annregar Realty’s official pre-qualification platform. Powered by
     function setLpSlide(idx) {
       if (!imgEl || !lpImages.length) return;
       lpIndex = (idx + lpImages.length) % lpImages.length;
-      imgEl.style.opacity = '0';
-      setTimeout(function() {
-        imgEl.src = lpImgSrc(lpImages[lpIndex]);
-        imgEl.style.opacity = '1';
-      }, 120);
+      // Swap only after the target decodes (no fade-to-blank); neighbors preload.
+      SqhImageCache.swap(imgEl, lpImgSrc(lpImages[lpIndex]), function () { imgEl.style.opacity = '1'; });
+      SqhImageCache.preloadNeighbors(lpImages.map(lpImgSrc), lpIndex);
       dotsEl.querySelectorAll('.sub-preview-dot').forEach(function(dot, dotIdx) {
         dot.classList.toggle('active', dotIdx === lpIndex);
       });
@@ -1518,7 +1517,7 @@ QUALIHOME is Annregar Realty’s official pre-qualification platform. Powered by
       if (!active || !active.contains(e.target)) return;
       const img = active.querySelector('.gallery-img-wrap img');
       if (!img) return; // placeholder — skip modal
-      modalImg.src = img.src;
+      SqhImageCache.swap(modalImg, img.src);
       modalImg.alt = img.alt;
       modalCap.textContent = active.querySelector('.gallery-caption-text')?.textContent || '';
       zoomCtrl.resetZoom();

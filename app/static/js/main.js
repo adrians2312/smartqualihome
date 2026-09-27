@@ -282,6 +282,64 @@ window.ZoomDragController = (function () {
   return ZoomDragController;
 }());
 
+/* ── Optimized image delivery + slide cache ── */
+// Rewrites absolute Cloudinary URLs to the f_auto,q_auto:best delivery
+// variant (optimal format, near-original quality). Local /uploads refs
+// pass through untouched. These on-the-fly transforms are CDN-cached
+// after the first hit, so no upload-time or backend change is needed.
+function sqhOptimizedSrc(ref) {
+  var url = (typeof sqhImgSrc === 'function') ? sqhImgSrc(ref) : String(ref == null ? '' : ref);
+  if (!/^https?:\/\/res\.cloudinary\.com\//i.test(url)) return url;
+  return url.replace(/(\/image\/upload\/)(?!f_auto)/, '$1f_auto,q_auto:best/');
+}
+
+// In-memory preloader for carousel slides: preloads neighbors so
+// next/back swaps hit the browser cache, and swaps an <img> only after
+// the target has decoded (no fade-to-blank flash).
+window.SqhImageCache = (function () {
+  var ready = {};
+  var pending = {};
+  function preload(ref) {
+    var url = sqhOptimizedSrc(ref);
+    if (!url || ready[url] || pending[url]) return;
+    pending[url] = true;
+    var im = new Image();
+    im.onload = im.onerror = function () { delete pending[url]; ready[url] = true; };
+    im.src = url;
+  }
+  function preloadAll(list) {
+    (list || []).forEach(function (ref) { preload(ref); });
+  }
+  function preloadNeighbors(list, idx) {
+    if (!list || !list.length) return;
+    var n = list.length;
+    preload(list[(idx + 1) % n]);
+    preload(list[(idx - 1 + n) % n]);
+  }
+  function swap(imgEl, ref, done) {
+    var url = sqhOptimizedSrc(ref);
+    if (!imgEl || !url) { if (typeof done === 'function') done(); return; }
+    if (imgEl.getAttribute('src') === url) { if (typeof done === 'function') done(); return; }
+    var im = new Image();
+    im.onload = function () {
+      ready[url] = true;
+      imgEl.src = url;
+      if (typeof done === 'function') done();
+    };
+    im.onerror = function () { if (typeof done === 'function') done(); };
+    im.src = url;
+  }
+  function isReady(ref) { return !!ready[sqhOptimizedSrc(ref)]; }
+  return {
+    preload: preload,
+    preloadAll: preloadAll,
+    preloadNeighbors: preloadNeighbors,
+    swap: swap,
+    isReady: isReady,
+    optimize: sqhOptimizedSrc
+  };
+}());
+
 document.addEventListener('DOMContentLoaded', function () {
 
   // ── Comma formatting for numeric inputs ───────────────────────

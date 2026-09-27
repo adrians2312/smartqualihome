@@ -2277,11 +2277,9 @@
     var imgEl = document.getElementById('tripPreviewImg');
     if (!imgEl || !_tripPreviewImages.length) return;
     _tripPreviewIdx = (idx + _tripPreviewImages.length) % _tripPreviewImages.length;
-    imgEl.style.opacity = '0';
-    setTimeout(function() {
-      imgEl.src = sqhImgSrc(_tripPreviewImages[_tripPreviewIdx]);
-      imgEl.style.opacity = '1';
-    }, 120);
+    // Swap only after the target decodes (no fade-to-blank); neighbors preload.
+    SqhImageCache.swap(imgEl, _tripPreviewImages[_tripPreviewIdx], function () { imgEl.style.opacity = '1'; });
+    SqhImageCache.preloadNeighbors(_tripPreviewImages, _tripPreviewIdx);
     document.querySelectorAll('#tripPreviewDots .sub-preview-dot').forEach(function(dot, dotIdx) {
       dot.classList.toggle('active', dotIdx === _tripPreviewIdx);
     });
@@ -2388,8 +2386,9 @@
     if (_tripPreviewImages.length) {
       imgWrap.style.display = 'block';
       placeholder.style.display = 'none';
-      imgEl.src = sqhImgSrc(_tripPreviewImages[0]);
-      imgEl.style.opacity = '1';
+      // Swap only after decode; warm the cache for instant next/back.
+      SqhImageCache.swap(imgEl, _tripPreviewImages[0], function () { imgEl.style.opacity = '1'; });
+      SqhImageCache.preloadAll(_tripPreviewImages);
       _tripPreviewIdx = 0;
       if (_tripPreviewImages.length > 1) {
         prevBtn.classList.remove('d-none');
@@ -2447,11 +2446,9 @@
     var imgEl = document.getElementById('pvmImg');
     if (!imgEl || !_pvmImages.length) return;
     _pvmIdx = (idx + _pvmImages.length) % _pvmImages.length;
-    imgEl.style.opacity = '0';
-    setTimeout(function() {
-      imgEl.src = sqhImgSrc(_pvmImages[_pvmIdx]);
-      imgEl.style.opacity = '1';
-    }, 120);
+    // Swap only after the target decodes (no fade-to-blank); neighbors preload.
+    SqhImageCache.swap(imgEl, _pvmImages[_pvmIdx], function () { imgEl.style.opacity = '1'; });
+    SqhImageCache.preloadNeighbors(_pvmImages, _pvmIdx);
     document.querySelectorAll('#pvmDots .sub-preview-dot').forEach(function(d, i) {
       d.classList.toggle('active', i === _pvmIdx);
     });
@@ -2657,8 +2654,9 @@
     if (_pvmImages.length) {
       imgWrap.style.display   = 'block';
       imgHolder.style.display = 'none';
-      imgEl.style.opacity     = '1';
-      imgEl.src = sqhImgSrc(_pvmImages[0]);
+      // Swap only after decode; warm the cache for instant next/back.
+      SqhImageCache.swap(imgEl, _pvmImages[0], function () { imgEl.style.opacity = '1'; });
+      SqhImageCache.preloadAll(_pvmImages);
       _pvmIdx = 0;
       if (_pvmImages.length > 1) {
         prevBtn.classList.remove('d-none');
@@ -2840,11 +2838,9 @@
     var imgEl = document.getElementById('bvmImg');
     if (!imgEl || !_bvmImages.length) return;
     _bvmIdx = (idx + _bvmImages.length) % _bvmImages.length;
-    imgEl.style.opacity = '0';
-    setTimeout(function() {
-      imgEl.src = sqhImgSrc(_bvmImages[_bvmIdx]);
-      imgEl.style.opacity = '1';
-    }, 120);
+    // Swap only after the target decodes (no fade-to-blank); neighbors preload.
+    SqhImageCache.swap(imgEl, _bvmImages[_bvmIdx], function () { imgEl.style.opacity = '1'; });
+    SqhImageCache.preloadNeighbors(_bvmImages, _bvmIdx);
     document.querySelectorAll('#bvmDots .sub-preview-dot').forEach(function(d, i) {
       d.classList.toggle('active', i === _bvmIdx);
     });
@@ -3998,7 +3994,7 @@
       _previewType = type;
       _previewRestoreModalId = null;
       var imgEl = document.getElementById('imgPreviewSrc');
-      if (imgEl) imgEl.src = imgUrl;
+      if (imgEl) SqhImageCache.swap(imgEl, imgUrl);
       _setPreviewActionsVisible(true);
       clientZoomCtrl.resetZoom();
       bootstrap.Modal.getOrCreateInstance(document.getElementById('imgPreviewModal')).show();
@@ -4007,7 +4003,7 @@
     function openReadOnlyPreview(imgUrl, sourceModalId) {
       _previewType = null;
       var imgEl = document.getElementById('imgPreviewSrc');
-      if (imgEl) imgEl.src = imgUrl;
+      if (imgEl) SqhImageCache.swap(imgEl, imgUrl);
       _setPreviewActionsVisible(false);
       clientZoomCtrl.resetZoom();
       var previewModalEl = document.getElementById('imgPreviewModal');

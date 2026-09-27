@@ -2473,13 +2473,9 @@ function _showPreviewSlide(idx) {
   } else {
     imgWrap.style.display = 'block';
     placeholder.style.setProperty('display', 'none', 'important');
-    // Fade out → swap src → fade in
-    imgEl.style.opacity = '0';
-    var newSrc = sqhImgSrc(_previewImages[idx]);
-    imgEl.onload = function() { imgEl.style.opacity = '1'; };
-    imgEl.src = newSrc;
-    // If browser serves from cache, onload may already have fired
-    if (imgEl.complete) imgEl.style.opacity = '1';
+    // Swap only after the target decodes (no fade-to-blank); neighbors preload.
+    SqhImageCache.swap(imgEl, _previewImages[idx], function () { imgEl.style.opacity = '1'; });
+    SqhImageCache.preloadNeighbors(_previewImages, idx);
   }
   var multi = _previewImages.length > 1;
   prevBtn.classList.toggle('d-none', !multi);
@@ -2576,11 +2572,9 @@ function _showProjectPreviewSlide(idx) {
   } else {
     imgWrap.style.display = 'block';
     placeholder.style.setProperty('display', 'none', 'important');
-    imgEl.style.opacity = '0';
-    var newSrc = sqhImgSrc(_projectPreviewImages[idx]);
-    imgEl.onload = function() { imgEl.style.opacity = '1'; };
-    imgEl.src = newSrc;
-    if (imgEl.complete) imgEl.style.opacity = '1';
+    // Swap only after the target decodes (no fade-to-blank); neighbors preload.
+    SqhImageCache.swap(imgEl, _projectPreviewImages[idx], function () { imgEl.style.opacity = '1'; });
+    SqhImageCache.preloadNeighbors(_projectPreviewImages, idx);
   }
 
   var multi = _projectPreviewImages.length > 1;
@@ -3096,11 +3090,9 @@ function _lemShowSlide(idx) {
   var imgEl = document.getElementById('lemImg');
   if (!imgEl || !_lemImages.length) return;
   _lemIdx = (idx + _lemImages.length) % _lemImages.length;
-  imgEl.style.opacity = '0';
-  setTimeout(function() {
-    imgEl.src = '/uploads/' + _lemImages[_lemIdx];
-    imgEl.style.opacity = '1';
-  }, 120);
+  // Swap only after the target decodes (no fade-to-blank); neighbors preload.
+  SqhImageCache.swap(imgEl, _lemImages[_lemIdx], function () { imgEl.style.opacity = '1'; });
+  SqhImageCache.preloadNeighbors(_lemImages, _lemIdx);
   document.querySelectorAll('#lemDots .sub-preview-dot').forEach(function(d, i) {
     d.classList.toggle('active', i === _lemIdx);
   });
@@ -3948,8 +3940,9 @@ function _openAdminEditPropertyModal(d) {
   if (_lemImages.length) {
     wrap.style.display = 'block';
     holder.style.display = 'none';
-    img.src = sqhImgSrc(_lemImages[0]);
-    img.style.opacity = '1';
+    // Swap only after decode; warm the cache for instant next/back.
+    SqhImageCache.swap(img, _lemImages[0], function () { img.style.opacity = '1'; });
+    SqhImageCache.preloadAll(_lemImages);
     if (_lemImages.length > 1) {
       prev.classList.remove('d-none');
       next.classList.remove('d-none');
@@ -5907,7 +5900,7 @@ var _adminPreviewType = null; // 'avatar' or 'banner'
     _adminPreviewType = type;
     _adminPreviewRestoreModalId = null;
     var imgEl = document.getElementById('adminImgPreviewSrc');
-    if (imgEl) imgEl.src = imgUrl;
+    if (imgEl) SqhImageCache.swap(imgEl, imgUrl);
     _setAdminPreviewActionsVisible(true);
     adminZoomCtrl.resetZoom();
     bootstrap.Modal.getOrCreateInstance(document.getElementById('adminImgPreviewModal')).show();
@@ -5916,7 +5909,7 @@ var _adminPreviewType = null; // 'avatar' or 'banner'
   function openAdminReadOnlyPreview(imgUrl, sourceModalId) {
     _adminPreviewType = null;
     var imgEl = document.getElementById('adminImgPreviewSrc');
-    if (imgEl) imgEl.src = imgUrl;
+    if (imgEl) SqhImageCache.swap(imgEl, imgUrl);
     _setAdminPreviewActionsVisible(false);
     adminZoomCtrl.resetZoom();
     var previewModalEl = document.getElementById('adminImgPreviewModal');
@@ -6200,7 +6193,9 @@ var _adminPreviewType = null; // 'avatar' or 'banner'
     var dotsEl = document.getElementById('adminTrmDots');
     if (!imgEl) return;
 
-    imgEl.src = sqhImgSrc(_adminTrmImages[_adminTrmIdx]);
+    // Swap only after the target decodes (no flash); neighbors preload.
+    SqhImageCache.swap(imgEl, _adminTrmImages[_adminTrmIdx]);
+    SqhImageCache.preloadNeighbors(_adminTrmImages, _adminTrmIdx);
     if (dotsEl) {
       dotsEl.querySelectorAll('.trm-dot').forEach(function (dot, i) {
         dot.classList.toggle('active', i === _adminTrmIdx);

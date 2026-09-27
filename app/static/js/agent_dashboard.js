@@ -468,11 +468,9 @@ function _lemShowSlide(idx) {
   _lemIdx = (idx + _lemImages.length) % _lemImages.length;
   var imgEl = document.getElementById('lemImg');
   if (!imgEl) return;
-  imgEl.style.opacity = '0';
-  setTimeout(function () {
-    imgEl.src = sqhImgSrc(_lemImages[_lemIdx]);
-    imgEl.style.opacity = '1';
-  }, 120);
+  // Swap only after the target decodes (no fade-to-blank); neighbors preload.
+  SqhImageCache.swap(imgEl, _lemImages[_lemIdx], function () { imgEl.style.opacity = '1'; });
+  SqhImageCache.preloadNeighbors(_lemImages, _lemIdx);
   document.querySelectorAll('#lemDots .sub-preview-dot').forEach(function (d, i) {
     d.classList.toggle('active', i === _lemIdx);
   });
@@ -665,7 +663,7 @@ function openEditPropertyModal(propId) {
   if (_lemImages.length) {
     if (lemImgWrap)    { lemImgWrap.style.display = 'block'; }
     if (lemPlaceholder){ lemPlaceholder.style.display = 'none'; }
-    if (lemImgEl)      { lemImgEl.src = sqhImgSrc(_lemImages[0]); lemImgEl.style.opacity = '1'; }
+    if (lemImgEl)      { SqhImageCache.swap(lemImgEl, _lemImages[0], function () { lemImgEl.style.opacity = '1'; }); SqhImageCache.preloadAll(_lemImages); }
     if (_lemImages.length > 1) {
       if (lemPrevBtn) lemPrevBtn.classList.remove('d-none');
       if (lemNextBtn) lemNextBtn.classList.remove('d-none');
@@ -2163,7 +2161,7 @@ document.getElementById('bannerFileInput') && document.getElementById('bannerFil
     var titleEl = document.getElementById('imgPreviewTitle');
     var imgEl   = document.getElementById('imgPreviewSrc');
     if (titleEl) titleEl.textContent = title;
-    if (imgEl)   imgEl.src = imgUrl;
+    if (imgEl)   SqhImageCache.swap(imgEl, imgUrl);
     _setPreviewActionsVisible(true);
     agentZoomCtrl.resetZoom();
     bootstrap.Modal.getOrCreateInstance(document.getElementById('imgPreviewModal')).show();
@@ -2172,7 +2170,7 @@ document.getElementById('bannerFileInput') && document.getElementById('bannerFil
   function openReadOnlyPreview(imgUrl, sourceModalId) {
     _previewType = null;
     var imgEl = document.getElementById('imgPreviewSrc');
-    if (imgEl) imgEl.src = imgUrl;
+    if (imgEl) SqhImageCache.swap(imgEl, imgUrl);
     _setPreviewActionsVisible(false);
     agentZoomCtrl.resetZoom();
     var previewModalEl = document.getElementById('imgPreviewModal');
