@@ -833,7 +833,7 @@
   position: relative;
   line-height: 0; /* eliminates gap beneath inline image */
   overflow: visible;
-  background: rgba(0, 0, 0, .92);
+  background: none;
 }
 .img-preview-img {
   display: block;
