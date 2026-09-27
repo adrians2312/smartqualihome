@@ -70,7 +70,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
   var pages        = document.querySelectorAll('.dash-page');
   var sidebarLinks = document.querySelectorAll('.sqh-sidebar .sidebar-link[data-page]');
-  var gotoLinks    = document.querySelectorAll('[data-goto]');
 
   function showPage(pageId) {
     // Hide all pages
@@ -112,12 +111,34 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  // "View All" / shortcut links inside pages
-  gotoLinks.forEach(function (link) {
-    link.addEventListener('click', function (e) {
-      e.preventDefault();
-      showPage(this.getAttribute('data-goto'));
-    });
+  // Navigate to the Models page showing one subdivision's models.
+  function gotoSubdivisionModels(subdivName) {
+    showPage('properties');
+    var searchInput = document.getElementById('propSearch');
+    if (searchInput) searchInput.value = '';
+    var selSub = document.getElementById('propSubdivisionFilter');
+    if (!selSub) return;
+    var found = false;
+    for (var i = 0; i < selSub.options.length; i++) {
+      if (selSub.options[i].value === (subdivName || '')) { found = true; break; }
+    }
+    selSub.value = found ? subdivName : '';
+    selSub.dispatchEvent(new Event('change'));
+  }
+
+  // "View All" / shortcut links inside pages (delegated so cards rendered
+  // later by _buildSubCard/_buildProjectCard work too). Preview-modal manage
+  // links have dedicated handlers — skipped here to avoid double navigation.
+  document.addEventListener('click', function (e) {
+    var link = e.target.closest('[data-goto]');
+    if (!link || link.id === 'subPreviewManageLink' || link.id === 'projectPreviewManageLink') return;
+    e.preventDefault();
+    var target = link.getAttribute('data-goto');
+    if (target === 'properties' && link.hasAttribute('data-subdivision')) {
+      gotoSubdivisionModels(link.getAttribute('data-subdivision'));
+    } else {
+      showPage(target);
+    }
   });
 
 
@@ -1274,7 +1295,7 @@ function _buildSubCard(subId, name, loc, desc, imageIds, propCount, locMeta, pro
         (loc ? '<div class="sub-card-loc"><i class="fas fa-map-marker-alt me-1"></i>' + _escHtml(loc) + '</div>' : '') +
         '<div class="sub-card-footer">' +
           '<span class="sub-card-badge">' + propLabel + '</span>' +
-          '<a href="#" class="sub-card-manage" data-goto="properties">Manage <i class="fas fa-arrow-right ms-1"></i></a>' +
+          '<a href="#" class="sub-card-manage" data-goto="properties" data-subdivision="' + _escAttr(name) + '">Manage <i class="fas fa-arrow-right ms-1"></i></a>' +
         '</div>' +
       '</div>' +
     '</div>';
@@ -2530,8 +2551,7 @@ document.addEventListener('click', function(e) {
   document.getElementById('subPreviewManageLink').onclick = function(ev) {
     ev.preventDefault();
     bootstrap.Modal.getInstance(document.getElementById('subPreviewModal')).hide();
-    var manageLink = document.querySelector('.sub-card-manage[data-goto]');
-    if (manageLink) manageLink.click();
+    gotoSubdivisionModels(name);
   };
 
   bootstrap.Modal.getOrCreateInstance(document.getElementById('subPreviewModal')).show();

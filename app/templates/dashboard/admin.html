@@ -3299,7 +3299,7 @@
               </div>
               <div class="sub-card-body project-card-preview-trigger" data-project-id="{{ pr.id }}" style="cursor:pointer;">
                 <div class="sub-card-name">{{ pr.name }}</div>
-                <div class="sub-card-loc"><i class="fas fa-map-marker-alt me-1"></i>{{ pr.location or '—' }}</div>
+                <div class="sub-card-loc" title="{{ pr.location|e }}"><i class="fas fa-map-marker-alt me-1"></i>{{ pr.location or '—' }}</div>
                 <div class="sub-card-loc"><i class="fas fa-calendar-alt me-1"></i>{{ pr.created_at.strftime('%b %d, %Y') if pr.created_at else '—' }}</div>
                 <div class="sub-card-footer">
                   <span class="sub-card-badge">{{ sub_counts.get(pr.id, 0) }} Subdivision{{ 's' if sub_counts.get(pr.id, 0) != 1 else '' }}</span>
@@ -3415,11 +3415,11 @@
                 <div class="sub-card-proj"><i class="fas fa-building me-1"></i>{{ s.project.name }}</div>
                 {% endif %}
                 {% if s.location %}
-                <div class="sub-card-loc"><i class="fas fa-map-marker-alt me-1"></i>{{ s.location }}</div>
+                <div class="sub-card-loc" title="{{ s.location|e }}"><i class="fas fa-map-marker-alt me-1"></i>{{ s.location }}</div>
                 {% endif %}
                 <div class="sub-card-footer">
                   <span class="sub-card-badge">{{ s.properties|length }} Model{{ 's' if s.properties|length != 1 else 'y' }}</span>
-                  <a href="#" class="sub-card-manage" data-goto="properties">Manage <i class="fas fa-arrow-right ms-1"></i></a>
+                  <a href="#" class="sub-card-manage" data-goto="properties" data-subdivision="{{ s.name }}">Manage <i class="fas fa-arrow-right ms-1"></i></a>
                 </div>
               </div>
             </div>

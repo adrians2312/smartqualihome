@@ -1154,6 +1154,45 @@ body.page-dashboard > main {
 }
 .sub-card-manage:hover { color: var(--clr-primary); }
 
+/* ── Uniform project/subdivision cards (mirrors #listings fix) ──
+   Fixed image ratio + equal-height columns + pinned footer so a
+   tall image can't stretch its card. Scoped to the two grids. */
+#projectsGrid > [class*="col-"],
+#subdivisionsGrid > [class*="col-"] {
+  display: flex;
+}
+#projectsGrid .sub-card,
+#subdivisionsGrid .sub-card {
+  flex: 1;
+  width: 100%;
+}
+#projectsGrid .sub-card-img-wrap,
+#subdivisionsGrid .sub-card-img-wrap {
+  aspect-ratio: 16 / 10;
+  height: auto;
+}
+#projectsGrid .sub-card-img,
+#subdivisionsGrid .sub-card-img,
+#projectsGrid .sub-card-img-placeholder,
+#subdivisionsGrid .sub-card-img-placeholder {
+  position: absolute;
+  inset: 0;
+}
+#projectsGrid .sub-card-loc,
+#subdivisionsGrid .sub-card-loc {
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.6em;
+}
+#projectsGrid .sub-card-footer,
+#subdivisionsGrid .sub-card-footer {
+  margin-top: auto;
+}
+
 /* ── Project Preview Modal ──────────────────────────────────── */
 .sub-preview-img-wrap { background: #111; }
 .sub-preview-img {
