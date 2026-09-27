@@ -2894,6 +2894,7 @@ h1 em, .display-serif { font-family: 'Lora', Georgia, serif; font-style: italic;
   opacity: 0; pointer-events: none;
   transition: opacity .28s ease;
   padding: .9rem;
+  overflow: hidden;
 }
 .gallery-modal.active { opacity: 1; pointer-events: auto; }
 .gallery-modal-inner {
@@ -2913,17 +2914,25 @@ h1 em, .display-serif { font-family: 'Lora', Georgia, serif; font-style: italic;
   max-width: 100%; max-height: 100%;
   border-radius: var(--radius-lg); object-fit: contain;
   box-shadow: 0 8px 48px rgba(0,0,0,.6); display: block; margin: 0 auto;
+  pointer-events: none;
+}
+
+.gallery-modal-img-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform;
+  transform-origin: center center;
   cursor: grab;
   user-select: none;
   touch-action: none;
 }
-.gallery-modal-img:active { cursor: grabbing; }
+.gallery-modal-img-wrapper.is-dragging { cursor: grabbing; }
 
 .gallery-modal-img-frame {
   position: relative;
   width: 100%;
   max-height: min(82vh, calc(100vh - 140px));
-  overflow: hidden;
   border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
@@ -4030,32 +4039,45 @@ body.gallery-modal-open {
 #listings .prop-card-img-wrap {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 10;
-  height: auto;
+  height: 230px;
+  min-height: 230px;
+  max-height: 230px;
   overflow: hidden;
   flex-shrink: 0;
+  background: #eef0f2;
 }
 
 #listings .prop-card-img {
-  position: absolute;
-  inset: 0;
   width: 100%;
   height: 100%;
+  max-height: 230px;
   object-fit: cover;
+  object-position: center;
   display: block;
 }
 
 #listings .prop-card-img-placeholder {
-  position: absolute;
-  inset: 0;
   width: 100%;
   height: 100%;
+  min-height: 230px;
   background: linear-gradient(135deg, rgba(139,26,26,.08), rgba(26,38,153,.06));
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 2.5rem;
   color: var(--clr-border);
+}
+
+@media (max-width: 576px) {
+  #listings .prop-card-img-wrap,
+  #listings .prop-card-img-placeholder {
+    height: 200px;
+    min-height: 200px;
+    max-height: 200px;
+  }
+  #listings .prop-card-img {
+    max-height: 200px;
+  }
 }
 
 #listings .prop-card-img-count {

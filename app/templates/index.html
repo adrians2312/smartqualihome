@@ -726,7 +726,9 @@ QUALIHOME is Annregar Realty’s official pre-qualification platform. Powered by
       <i class="fas fa-times"></i>
     </button>
     <div class="gallery-modal-img-frame" id="galleryModalImgFrame">
-      <img id="galleryModalImg" src="" alt="" class="gallery-modal-img">
+      <div class="gallery-modal-img-wrapper" id="galleryModalImgWrapper">
+        <img id="galleryModalImg" src="" alt="" class="gallery-modal-img">
+      </div>
       <div class="gallery-modal-zoom-controls" id="galleryZoomControls" aria-label="Image zoom controls">
         <button type="button" class="gallery-zoom-btn" id="galleryZoomOut" aria-label="Zoom out"><i class="fas fa-search-minus"></i></button>
         <button type="button" class="gallery-zoom-btn gallery-zoom-reset" id="galleryZoomReset" aria-label="Reset zoom">100%</button>
@@ -795,7 +797,9 @@ QUALIHOME is Annregar Realty’s official pre-qualification platform. Powered by
       <i class="fas fa-times"></i>
     </button>
     <div class="gallery-modal-img-frame" id="lpPvmPreviewImgFrame">
-      <img id="lpPvmPreviewImg" src="" alt="" class="gallery-modal-img">
+      <div class="gallery-modal-img-wrapper" id="lpPvmPreviewImgWrapper">
+        <img id="lpPvmPreviewImg" src="" alt="" class="gallery-modal-img">
+      </div>
       <div class="gallery-modal-zoom-controls" id="lpPvmPreviewZoomControls" aria-label="Image zoom controls">
         <button type="button" class="gallery-zoom-btn" id="lpPvmPreviewZoomOut" aria-label="Zoom out"><i class="fas fa-search-minus"></i></button>
         <button type="button" class="gallery-zoom-btn gallery-zoom-reset" id="lpPvmPreviewZoomReset" aria-label="Reset zoom">100%</button>
@@ -1002,6 +1006,156 @@ QUALIHOME is Annregar Realty’s official pre-qualification platform. Powered by
     });
   });
 
+  // ── ZoomDragController (shared by all gallery-style modals) ──
+  class ZoomDragController {
+    constructor({ frame, wrapper, img, zoomIn, zoomOut, reset }) {
+      this.frame   = frame;
+      this.wrapper = wrapper;
+      this.img     = img;
+      this.zoomIn  = zoomIn;
+      this.zoomOut = zoomOut;
+      this.reset   = reset;
+      this.scale      = 1;
+      this.panX       = 0;
+      this.panY       = 0;
+      this.dragging   = false;
+      this.dragStartX = 0;
+      this.dragStartY = 0;
+      this._bindButtons();
+      this._bindPointer();
+      this._bindWheel();
+      if (this.img) this.img.addEventListener('load', () => this.resetZoom());
+      window.addEventListener('resize', () => { this._clamp(); this._apply(); });
+    }
+    _clamp() {
+      if (!this.frame || !this.img) return;
+      if (this.scale <= 1.0001) { this.panX = 0; this.panY = 0; return; }
+      const fw = this.frame.clientWidth;
+      const fh = this.frame.clientHeight;
+      const sw = this.img.offsetWidth * this.scale;
+      const sh = this.img.offsetHeight * this.scale;
+      const maxX = Math.max(0, (sw - fw) / 2);
+      const maxY = Math.max(0, (sh - fh) / 2);
+      this.panX = Math.max(-maxX, Math.min(maxX, this.panX));
+      this.panY = Math.max(-maxY, Math.min(maxY, this.panY));
+    }
+    _apply() {
+      if (!this.wrapper) return;
+      this.wrapper.style.transform = 'translate(' + this.panX + 'px,' + this.panY + 'px) scale(' + this.scale + ')';
+      this.wrapper.style.transformOrigin = 'center center';
+      this.wrapper.classList.toggle('is-dragging', this.dragging);
+      if (this.reset) this.reset.textContent = Math.round(this.scale * 100) + '%';
+    }
+    setZoom(next) {
+      this.scale = Math.max(1, Math.min(4, next));
+      this._clamp();
+      this._apply();
+    }
+    resetZoom() {
+      this.scale = 1; this.panX = 0; this.panY = 0; this.dragging = false;
+      this._apply();
+    }
+    startDrag(cx, cy) {
+      this.dragging   = true;
+      this.dragStartX = cx - this.panX;
+      this.dragStartY = cy - this.panY;
+      this._apply();
+    }
+    moveDrag(cx, cy) {
+      if (!this.dragging) return;
+      this.panX = cx - this.dragStartX;
+      this.panY = cy - this.dragStartY;
+      this._clamp();
+      this._apply();
+    }
+    endDrag() {
+      if (!this.dragging) return;
+      this.dragging = false;
+      this._apply();
+    }
+    _bindButtons() {
+      if (this.zoomIn)  this.zoomIn.addEventListener('click', () => this.setZoom(this.scale + 0.25));
+      if (this.zoomOut) this.zoomOut.addEventListener('click', () => this.setZoom(this.scale - 0.25));
+      if (this.reset)   this.reset.addEventListener('click', () => this.resetZoom());
+    }
+    _bindPointer() {
+      let pinchStartDist  = 0;
+      let pinchStartScale = 1;
+      let pinchMidX       = 0;
+      let pinchMidY       = 0;
+      let pinchStartPanX  = 0;
+      let pinchStartPanY  = 0;
+      let isPinching      = false;
+      const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+      const mid = (t) => ({ x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 });
+      if (this.wrapper) {
+        this.wrapper.addEventListener('touchstart', e => {
+          if (e.touches.length === 2) {
+            isPinching      = true;
+            this.dragging   = false;
+            pinchStartDist  = dist(e.touches);
+            pinchStartScale = this.scale;
+            pinchStartPanX  = this.panX;
+            pinchStartPanY  = this.panY;
+            const rect = this.wrapper.getBoundingClientRect();
+            const m    = mid(e.touches);
+            pinchMidX  = m.x - rect.left - rect.width / 2;
+            pinchMidY  = m.y - rect.top - rect.height / 2;
+          } else if (e.touches.length === 1 && !isPinching) {
+            this.startDrag(e.touches[0].clientX, e.touches[0].clientY);
+          }
+        }, { passive: true });
+        this.wrapper.addEventListener('mousedown', e => {
+          e.preventDefault();
+          this.startDrag(e.clientX, e.clientY);
+        });
+      }
+      window.addEventListener('mousemove', e => this.moveDrag(e.clientX, e.clientY));
+      window.addEventListener('mouseup', () => this.endDrag());
+      window.addEventListener('touchmove', e => {
+        if (e.touches.length === 2 && isPinching) {
+          e.preventDefault();
+          const newDist  = dist(e.touches);
+          if (!pinchStartDist) return;
+          const ratio    = newDist / pinchStartDist;
+          const newScale = Math.max(1, Math.min(4, pinchStartScale * ratio));
+          const scaleRatio = newScale / pinchStartScale;
+          this.scale = newScale;
+          this.panX  = pinchMidX + scaleRatio * (pinchStartPanX - pinchMidX);
+          this.panY  = pinchMidY + scaleRatio * (pinchStartPanY - pinchMidY);
+          this._clamp();
+          this._apply();
+        } else if (e.touches.length === 1 && !isPinching) {
+          if (!e.touches.length) return;
+          if (this.dragging) e.preventDefault();
+          this.moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }, { passive: false });
+      window.addEventListener('touchend', e => {
+        if (e.touches.length < 2) isPinching = false;
+        if (e.touches.length === 0) this.endDrag();
+      });
+    }
+    _bindWheel() {
+      if (!this.wrapper) return;
+      this.wrapper.addEventListener('wheel', e => {
+        e.preventDefault();
+        const rect  = this.wrapper.getBoundingClientRect();
+        const cx    = e.clientX - rect.left - rect.width / 2;
+        const cy    = e.clientY - rect.top - rect.height / 2;
+        const delta = e.deltaY > 0 ? -0.2 : 0.2;
+        const prev  = this.scale;
+        if (!prev) return;
+        this.scale  = Math.max(1, Math.min(4, prev + delta));
+        const ratio = this.scale / prev;
+        this.panX   = cx + ratio * (this.panX - cx);
+        this.panY   = cy + ratio * (this.panY - cy);
+        this._clamp();
+        this._apply();
+      }, { passive: false });
+    }
+  }
+
   // ── Listings location filter + modal detail ──
   (function() {
     const cardSelector = '.listings-card--lime';
@@ -1061,83 +1215,27 @@ QUALIHOME is Annregar Realty’s official pre-qualification platform. Powered by
     const previewZoomOutBtn = document.getElementById('lpPvmPreviewZoomOut');
     const previewZoomResetBtn = document.getElementById('lpPvmPreviewZoomReset');
     let lpLockedScrollY = 0;
-    let previewScale = 1;
-    let previewPanX = 0;
-    let previewPanY = 0;
-    let previewDragging = false;
-    let previewDragStartX = 0;
-    let previewDragStartY = 0;
-
-    function previewClampPan() {
-      if (!previewFrame || !previewImg) return;
-      const frameW = previewFrame.clientWidth;
-      const frameH = previewFrame.clientHeight;
-      const scaledW = previewImg.clientWidth * previewScale;
-      const scaledH = previewImg.clientHeight * previewScale;
-      const maxX = Math.max(0, (scaledW - frameW) / 2);
-      const maxY = Math.max(0, (scaledH - frameH) / 2);
-      previewPanX = Math.max(-maxX, Math.min(maxX, previewPanX));
-      previewPanY = Math.max(-maxY, Math.min(maxY, previewPanY));
-      if (previewScale <= 1.0001) {
-        previewPanX = 0;
-        previewPanY = 0;
-      }
-    }
-
-    function previewApplyTransform() {
-      if (!previewImg) return;
-      previewClampPan();
-      previewImg.style.transform = 'translate(' + previewPanX + 'px, ' + previewPanY + 'px) scale(' + previewScale + ')';
-      previewImg.style.transformOrigin = 'center center';
-      previewImg.style.cursor = previewDragging ? 'grabbing' : 'grab';
-      if (previewZoomResetBtn) previewZoomResetBtn.textContent = Math.round(previewScale * 100) + '%';
-    }
-
-    function previewSetZoom(nextZoom) {
-      previewScale = Math.max(1, Math.min(4, nextZoom));
-      previewApplyTransform();
-    }
-
-    function previewResetZoom() {
-      previewScale = 1;
-      previewPanX = 0;
-      previewPanY = 0;
-      previewDragging = false;
-      previewApplyTransform();
-    }
-
-    function previewStartDrag(clientX, clientY) {
-      previewDragging = true;
-      previewDragStartX = clientX - previewPanX;
-      previewDragStartY = clientY - previewPanY;
-      previewApplyTransform();
-    }
-
-    function previewMoveDrag(clientX, clientY) {
-      if (!previewDragging) return;
-      previewPanX = clientX - previewDragStartX;
-      previewPanY = clientY - previewDragStartY;
-      previewApplyTransform();
-    }
-
-    function previewEndDrag() {
-      if (!previewDragging) return;
-      previewDragging = false;
-      previewApplyTransform();
-    }
+    const previewZoomCtrl = new ZoomDragController({
+      frame:   previewFrame,
+      wrapper: document.getElementById('lpPvmPreviewImgWrapper'),
+      img:     previewImg,
+      zoomIn:  previewZoomInBtn,
+      zoomOut: previewZoomOutBtn,
+      reset:   previewZoomResetBtn,
+    });
 
     function openLpImagePreview() {
       if (!previewModal || !previewImg || !imgEl || !imgEl.src) return;
       previewImg.src = imgEl.src;
       previewImg.alt = imgEl.alt || '';
-      previewResetZoom();
+      previewZoomCtrl.resetZoom();
       previewModal.classList.add('active');
     }
 
     function closeLpImagePreview() {
       if (!previewModal) return;
       previewModal.classList.remove('active');
-      previewResetZoom();
+      previewZoomCtrl.resetZoom();
     }
 
     modalEl.addEventListener('show.bs.modal', function() {
@@ -1282,26 +1380,6 @@ QUALIHOME is Annregar Realty’s official pre-qualification platform. Powered by
       });
     }
 
-    if (previewZoomInBtn) previewZoomInBtn.addEventListener('click', function() { previewSetZoom(previewScale + 0.25); });
-    if (previewZoomOutBtn) previewZoomOutBtn.addEventListener('click', function() { previewSetZoom(previewScale - 0.25); });
-    if (previewZoomResetBtn) previewZoomResetBtn.addEventListener('click', previewResetZoom);
-
-    if (previewImg) {
-      previewImg.addEventListener('load', previewResetZoom);
-      previewImg.addEventListener('wheel', function(e) {
-        e.preventDefault();
-        previewSetZoom(previewScale + (e.deltaY < 0 ? 0.2 : -0.2));
-      }, { passive: false });
-      previewImg.addEventListener('mousedown', function(e) {
-        e.preventDefault();
-        previewStartDrag(e.clientX, e.clientY);
-      });
-      previewImg.addEventListener('touchstart', function(e) {
-        if (!e.touches || !e.touches.length) return;
-        previewStartDrag(e.touches[0].clientX, e.touches[0].clientY);
-      }, { passive: true });
-    }
-
     if (previewCloseBtn) previewCloseBtn.addEventListener('click', closeLpImagePreview);
     if (previewModal) {
       previewModal.addEventListener('click', function(e) {
@@ -1312,16 +1390,6 @@ QUALIHOME is Annregar Realty’s official pre-qualification platform. Powered by
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') closeLpImagePreview();
     });
-
-    window.addEventListener('mousemove', function(e) { previewMoveDrag(e.clientX, e.clientY); });
-    window.addEventListener('mouseup', previewEndDrag);
-    window.addEventListener('touchmove', function(e) {
-      if (!e.touches || !e.touches.length) return;
-      if (previewDragging) e.preventDefault();
-      previewMoveDrag(e.touches[0].clientX, e.touches[0].clientY);
-    }, { passive: false });
-    window.addEventListener('touchend', previewEndDrag);
-    window.addEventListener('resize', previewApplyTransform);
 
     document.addEventListener('click', function(e) {
       const trigger = e.target.closest(cardSelector + ', .listings-preview-btn');
@@ -1395,70 +1463,15 @@ QUALIHOME is Annregar Realty’s official pre-qualification platform. Powered by
 
     let filtered = slides.slice();
     let current  = 0;
-    let zoomScale = 1;
-    let panX = 0;
-    let panY = 0;
-    let isDragging = false;
-    let dragStartX = 0;
-    let dragStartY = 0;
-
-    function clampPan() {
-      if (!modalFrame || !modalImg) return;
-      const frameW = modalFrame.clientWidth;
-      const frameH = modalFrame.clientHeight;
-      const scaledW = modalImg.clientWidth * zoomScale;
-      const scaledH = modalImg.clientHeight * zoomScale;
-      const maxX = Math.max(0, (scaledW - frameW) / 2);
-      const maxY = Math.max(0, (scaledH - frameH) / 2);
-      panX = Math.max(-maxX, Math.min(maxX, panX));
-      panY = Math.max(-maxY, Math.min(maxY, panY));
-      if (zoomScale <= 1.0001) {
-        panX = 0;
-        panY = 0;
-      }
-    }
-
-    function applyTransform() {
-      if (!modalImg) return;
-      clampPan();
-      modalImg.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomScale})`;
-      modalImg.style.transformOrigin = 'center center';
-      modalImg.style.cursor = isDragging ? 'grabbing' : 'grab';
-      if (zoomResetBtn) zoomResetBtn.textContent = Math.round(zoomScale * 100) + '%';
-    }
-
-    function setZoom(nextZoom) {
-      zoomScale = Math.max(1, Math.min(4, nextZoom));
-      applyTransform();
-    }
-
-    function resetZoom() {
-      zoomScale = 1;
-      panX = 0;
-      panY = 0;
-      isDragging = false;
-      applyTransform();
-    }
-
-    function startDrag(clientX, clientY) {
-      isDragging = true;
-      dragStartX = clientX - panX;
-      dragStartY = clientY - panY;
-      applyTransform();
-    }
-
-    function moveDrag(clientX, clientY) {
-      if (!isDragging) return;
-      panX = clientX - dragStartX;
-      panY = clientY - dragStartY;
-      applyTransform();
-    }
-
-    function endDrag() {
-      if (!isDragging) return;
-      isDragging = false;
-      applyTransform();
-    }
+    // ── Zoom/drag (delegated to shared controller) ──
+    const zoomCtrl = new ZoomDragController({
+      frame:   modalFrame,
+      wrapper: document.getElementById('galleryModalImgWrapper'),
+      img:     modalImg,
+      zoomIn:  zoomInBtn,
+      zoomOut: zoomOutBtn,
+      reset:   zoomResetBtn,
+    });
 
     function buildDots() {
       dotsBox.innerHTML = '';
@@ -1508,7 +1521,7 @@ QUALIHOME is Annregar Realty’s official pre-qualification platform. Powered by
       modalImg.src = img.src;
       modalImg.alt = img.alt;
       modalCap.textContent = active.querySelector('.gallery-caption-text')?.textContent || '';
-      resetZoom();
+      zoomCtrl.resetZoom();
       modal.classList.add('active');
       document.body.classList.add('gallery-modal-open');
       document.body.style.paddingRight = '0px';
@@ -1519,39 +1532,11 @@ QUALIHOME is Annregar Realty’s official pre-qualification platform. Powered by
       document.body.classList.remove('gallery-modal-open');
       document.body.style.overflow = '';
       document.body.style.paddingRight = '';
-      resetZoom();
+      zoomCtrl.resetZoom();
     }
     modalClose.addEventListener('click', closeModal);
     modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
-
-    if (zoomInBtn) zoomInBtn.addEventListener('click', () => setZoom(zoomScale + 0.25));
-    if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => setZoom(zoomScale - 0.25));
-    if (zoomResetBtn) zoomResetBtn.addEventListener('click', resetZoom);
-
-    modalImg.addEventListener('load', resetZoom);
-    modalImg.addEventListener('wheel', e => {
-      e.preventDefault();
-      setZoom(zoomScale + (e.deltaY < 0 ? 0.2 : -0.2));
-    }, { passive: false });
-    modalImg.addEventListener('mousedown', e => {
-      e.preventDefault();
-      startDrag(e.clientX, e.clientY);
-    });
-    modalImg.addEventListener('touchstart', e => {
-      if (!e.touches || !e.touches.length) return;
-      startDrag(e.touches[0].clientX, e.touches[0].clientY);
-    }, { passive: true });
-
-    window.addEventListener('mousemove', e => moveDrag(e.clientX, e.clientY));
-    window.addEventListener('mouseup', endDrag);
-    window.addEventListener('touchmove', e => {
-      if (!e.touches || !e.touches.length) return;
-      if (isDragging) e.preventDefault();
-      moveDrag(e.touches[0].clientX, e.touches[0].clientY);
-    }, { passive: false });
-    window.addEventListener('touchend', endDrag);
-    window.addEventListener('resize', applyTransform);
 
     // Tab filtering
     tabs.forEach(tab => {
