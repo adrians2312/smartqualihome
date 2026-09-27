@@ -4004,6 +4004,9 @@ body.gallery-modal-open {
    ============================================================ */
 
 /* Listings cards (client prop-card pattern) */
+#listings .row > [class*="col-"] {
+  display: flex;
+}
 #listings .prop-card {
   background: var(--clr-card);
   border-radius: var(--radius-md);
@@ -4012,6 +4015,8 @@ body.gallery-modal-open {
   border: 1px solid rgba(0,0,0,.06);
   transition: box-shadow var(--transition), transform var(--transition);
   height: 100%;
+  flex: 1;
+  width: 100%;
   display: flex;
   flex-direction: column;
   cursor: pointer;
@@ -4025,12 +4030,15 @@ body.gallery-modal-open {
 #listings .prop-card-img-wrap {
   position: relative;
   width: 100%;
-  height: fit-content;
+  aspect-ratio: 16 / 10;
+  height: auto;
   overflow: hidden;
   flex-shrink: 0;
 }
 
 #listings .prop-card-img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -4038,6 +4046,8 @@ body.gallery-modal-open {
 }
 
 #listings .prop-card-img-placeholder {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   background: linear-gradient(135deg, rgba(139,26,26,.08), rgba(26,38,153,.06));
@@ -4113,6 +4123,10 @@ body.gallery-modal-open {
   gap: .5rem;
 }
 
+#listings .prop-card-body > .prop-card-header:nth-of-type(2) {
+  align-items: flex-start;
+}
+
 #listings .prop-card-header > div {
   flex: 1;
   min-width: 0;
@@ -4131,6 +4145,13 @@ body.gallery-modal-open {
 #listings .prop-card-loc {
   font-size: var(--fs-sm);
   color: var(--clr-muted);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.6em;
 }
 
 #listings .prop-card-loc i { color: var(--clr-primary); }
@@ -4138,9 +4159,10 @@ body.gallery-modal-open {
 #listings .prop-card-icons {
   display: flex;
   justify-content: flex-end;
-  flex-wrap: wrap;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
   gap: .4rem;
-  margin-top: .4rem;
+  margin-top: .1rem;
 }
 
 #listings .prop-card-icon-chip {
@@ -4160,7 +4182,7 @@ body.gallery-modal-open {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: .5rem;
+  margin-top: auto;
   padding-top: .5rem;
   border-top: 1px solid var(--clr-border);
 }
@@ -4206,6 +4228,17 @@ body.gallery-modal-open {
   font-size: var(--fs-xs);
   color: var(--clr-muted);
   margin-top: .2rem;
+}
+
+#listings .prop-card-meta span:first-child {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#listings .prop-card-meta span:last-child {
+  flex-shrink: 0;
 }
 
 #listings .prop-card-meta i { color: var(--clr-primary); }

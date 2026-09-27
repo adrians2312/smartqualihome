@@ -249,7 +249,7 @@ QUALIHOME is Annregar Realty’s official pre-qualification platform. Powered by
               <span class="sqh-badge {{ s_badge }}">{{ p.status|title }}</span>
             </div>
             <div class="prop-card-header">
-              <div class="prop-card-loc"><i class="fas fa-map-marker-alt me-1"></i>{{ p.location }}</div>
+              <div class="prop-card-loc" title="{{ p.location|e }}"><i class="fas fa-map-marker-alt me-1"></i>{{ p.location }}</div>
               <div class="prop-card-icons">
                 {% if p.bedrooms %}<span class="prop-card-icon-chip"><i class="fas fa-bed chip-icon-accent"></i>{{ p.bedrooms }}</span>{% endif %}
                 {% if p.bathrooms %}<span class="prop-card-icon-chip"><i class="fas fa-bath chip-icon-blue"></i>{{ p.bathrooms }}</span>{% endif %}
