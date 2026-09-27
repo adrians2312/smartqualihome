@@ -2152,15 +2152,19 @@ body.page-client-portal {
 
 /* ── Image Preview Modal ────────────────────────────────────── */
 .img-preview-dialog {
-  max-width: fit-content;
+  max-width: min(92vw, 900px);
+  width: min(92vw, 900px);
   min-width: 260px;
 }
-.img-preview-dialog .modal-content { width: auto; }
+.img-preview-dialog .modal-content {
+  width: 100%;
+  overflow: visible;
+}
 .img-preview-body {
   position: relative;
   line-height: 0;
-  overflow: hidden;
-  background: #1a1a1a;
+  overflow: visible;
+  background: transparent;
 }
 .img-preview-img {
   display: block;
@@ -2171,12 +2175,7 @@ body.page-client-portal {
   pointer-events: none;
 }
 .img-preview-gradient {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 45%;
-  background: linear-gradient(to top, rgba(0,0,0,.72) 0%, transparent 100%);
-  pointer-events: none;
-  z-index: 1;
+  display: none;
 }
 .img-preview-actions {
   position: absolute;
