@@ -592,6 +592,7 @@ def _compute_property_pricing(property_item: Property) -> dict:
         "loanable_percentage": property_item.loanable_percentage,
         "vat_rate": property_item.vat_rate,
         "lmf_rate": property_item.lmf_rate,
+        "annual_interest_rate": property_item.annual_interest_rate,
     }
     return _compute_pricing_values(_resolve_pricing_inputs(overrides))
 
@@ -3231,6 +3232,8 @@ def agent_submit_property():
         loanable_percentage = float(_clean_numeric_str(request.form.get("loanable_percentage")) or 0)
         vat_rate = float(_clean_numeric_str(request.form.get("vat_rate")) or 0)
         lmf_rate = float(_clean_numeric_str(request.form.get("lmf_rate")) or 0)
+        _air_raw = _clean_numeric_str(request.form.get("annual_interest_rate"))
+        annual_interest_rate = float(_air_raw) if _air_raw else None
         floor_area    = float(floor_area_s) if floor_area_s else None
         lot_area      = float(lot_area_s)   if lot_area_s   else None
         subdivision_id = int(sub_id_s) if sub_id_s else None
@@ -3317,6 +3320,7 @@ def agent_submit_property():
         loanable_percentage=loanable_percentage,
         vat_rate=vat_rate,
         lmf_rate=lmf_rate,
+        annual_interest_rate=annual_interest_rate,
         bedrooms=bedrooms, bathrooms=bathrooms, storeys=storeys,
         floor_area=floor_area, lot_area=lot_area,
         description=description,
@@ -3361,6 +3365,7 @@ def agent_submit_property():
             "loanable_percentage": float(prop.loanable_percentage) if prop.loanable_percentage is not None else 0,
             "vat_rate": float(prop.vat_rate) if prop.vat_rate is not None else 0,
             "lmf_rate": float(prop.lmf_rate) if prop.lmf_rate is not None else 0,
+            "annual_interest_rate": float(prop.annual_interest_rate) if prop.annual_interest_rate is not None else None,
             "unit_id": prop.unit_id or "",
             "bedrooms": prop.bedrooms,
             "bathrooms": prop.bathrooms,
@@ -3428,6 +3433,11 @@ def agent_edit_property(prop_id):
         loanable_percentage = float(_clean_numeric_str(request.form.get("loanable_percentage") or str(prop.loanable_percentage or 80)) or 80)
         vat_rate = float(_clean_numeric_str(request.form.get("vat_rate") or str(prop.vat_rate or 12)) or 12)
         lmf_rate = float(_clean_numeric_str(request.form.get("lmf_rate") or str(prop.lmf_rate or 10)) or 10)
+        if "annual_interest_rate" in request.form:
+            _air_raw = _clean_numeric_str(request.form.get("annual_interest_rate"))
+            annual_interest_rate = float(_air_raw) if _air_raw else None
+        else:
+            annual_interest_rate = prop.annual_interest_rate
         floor_area    = float(floor_area_s) if floor_area_s else None
         lot_area      = float(lot_area_s)   if lot_area_s   else None
         subdivision_id = int(sub_id_s) if sub_id_s else None
@@ -3497,6 +3507,7 @@ def agent_edit_property(prop_id):
     prop.loanable_percentage = loanable_percentage
     prop.vat_rate = vat_rate
     prop.lmf_rate = lmf_rate
+    prop.annual_interest_rate = annual_interest_rate
     prop.bedrooms     = bedrooms
     prop.bathrooms    = bathrooms
     prop.storeys      = storeys

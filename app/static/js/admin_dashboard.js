@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // links have dedicated handlers — skipped here to avoid double navigation.
   document.addEventListener('click', function (e) {
     var link = e.target.closest('[data-goto]');
-    if (!link || link.id === 'subPreviewManageLink' || link.id === 'projectPreviewManageLink') return;
+    if (!link || link.id === 'projectPreviewManageLink') return;
     e.preventDefault();
     var target = link.getAttribute('data-goto');
     if (target === 'properties' && link.hasAttribute('data-subdivision')) {
@@ -2522,6 +2522,7 @@ document.addEventListener('click', function(e) {
   _previewIdx    = 0;
 
   document.getElementById('subPreviewName').textContent = name;
+  document.getElementById('subPreviewManageLink').setAttribute('data-subdivision', name);
   document.getElementById('subPreviewLocation').innerHTML = loc
     ? '<i class="fas fa-map-marker-alt me-1" style="color:var(--clr-primary);"></i>' + loc : '';
   document.getElementById('subPreviewDescription').textContent = desc;
@@ -2548,10 +2549,8 @@ document.addEventListener('click', function(e) {
     var delCardBtn = document.querySelector('.sub-delete-btn[data-sub-id="' + subId + '"]');
     if (delCardBtn) delCardBtn.click();
   };
-  document.getElementById('subPreviewManageLink').onclick = function(ev) {
-    ev.preventDefault();
+  document.getElementById('subPreviewManageLink').onclick = function() {
     bootstrap.Modal.getInstance(document.getElementById('subPreviewModal')).hide();
-    gotoSubdivisionModels(name);
   };
 
   bootstrap.Modal.getOrCreateInstance(document.getElementById('subPreviewModal')).show();
@@ -2612,6 +2611,7 @@ document.addEventListener('click', function(e) {
   var trigger = e.target.closest('.project-card-preview-trigger, .project-preview-btn');
   if (!trigger) return;
   if (e.target.closest('.sub-card-action-delete')) return;
+  if (e.target.closest('.sub-card-manage')) return;
 
   var card = trigger.closest('.sub-card');
   if (!card || !card.dataset.projectId) return;
@@ -3908,6 +3908,8 @@ function _openAdminEditPropertyModal(d) {
   document.getElementById('ep_loanable_percentage').value = cleanNumericText(d.propLoanablePercentage, '0');
   document.getElementById('ep_vat_rate').value = cleanNumericText(d.propVatRate, '0');
   document.getElementById('ep_lmf_rate').value = cleanNumericText(d.propLmfRate, '0');
+  var _epRateFallback = ((document.getElementById('acp_annual_interest_rate') || {}).value || '').trim() || '8.50';
+  document.getElementById('ep_annual_interest_rate').value = cleanNumericText(d.propAnnualInterestRate, _epRateFallback);
   document.getElementById('ep_bedrooms').value = d.propBedrooms || '0';
   document.getElementById('ep_bathrooms').value = d.propBathrooms || '0';
   document.getElementById('ep_storeys').value = d.propStoreys || '1';
@@ -4369,6 +4371,7 @@ _bind('editPropBtn', 'click', function() {
     fd.append('loanable_percentage', sqhCleanNumeric(document.getElementById('ep_loanable_percentage').value) || '0');
     fd.append('vat_rate', sqhCleanNumeric(document.getElementById('ep_vat_rate').value) || '0');
     fd.append('lmf_rate', sqhCleanNumeric(document.getElementById('ep_lmf_rate').value) || '0');
+    fd.append('annual_interest_rate', sqhCleanNumeric(document.getElementById('ep_annual_interest_rate').value));
     fd.append('bedrooms', document.getElementById('ep_bedrooms').value || '0');
     fd.append('bathrooms', document.getElementById('ep_bathrooms').value || '0');
     fd.append('storeys', document.getElementById('ep_storeys').value || '1');
@@ -7045,6 +7048,54 @@ var _pendingAcpFiles = [];
     _acpRefreshPreview();
   });
 
+  var _epPreviewTicket = 0;
+  var _epPreviewDebounceTimer = null;
+  function _epRefreshPreview() {
+    function val(id) {
+      var el = document.getElementById(id);
+      return el ? String(el.value || '').trim() : '';
+    }
+    if (!document.getElementById('editPropertyModal')) return;
+    var params = {
+      price: sqhCleanNumeric(val('ep_price')),
+      promo_discount_rate: sqhCleanNumeric(val('ep_promo_discount_rate')),
+      reservation_fee: sqhCleanNumeric(val('ep_reservation_fee')),
+      downpayment_rate: sqhCleanNumeric(val('ep_downpayment_rate')),
+      downpayment_terms_months: sqhCleanNumeric(val('ep_downpayment_terms_months')),
+      loanable_percentage: sqhCleanNumeric(val('ep_loanable_percentage')),
+      vat_rate: sqhCleanNumeric(val('ep_vat_rate')),
+      lmf_rate: sqhCleanNumeric(val('ep_lmf_rate')),
+      annual_interest_rate: sqhCleanNumeric(val('ep_annual_interest_rate'))
+    };
+    var qs = Object.keys(params).filter(function (k) { return String(params[k] || '').trim() !== ''; })
+      .map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); })
+      .join('&');
+    var ticket = ++_epPreviewTicket;
+    fetch('/admin/property/pricing-preview?' + qs, {
+      method: 'GET',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      cache: 'no-store'
+    })
+      .then(function (r) { return r.json().catch(function () { return {}; }); })
+      .then(function (data) {
+        if (ticket !== _epPreviewTicket) return;
+        if (data && data.ok) { try { renderAdminPricingBreakdown(data.pricing); } catch (_) {} }
+      })
+      .catch(function () {});
+  }
+
+  function _debouncedEpPreview() {
+    if (_epPreviewDebounceTimer) clearTimeout(_epPreviewDebounceTimer);
+    _epPreviewDebounceTimer = setTimeout(_epRefreshPreview, 300);
+  }
+
+  ['ep_price', 'ep_promo_discount_rate', 'ep_reservation_fee', 'ep_downpayment_rate',
+   'ep_downpayment_terms_months', 'ep_loanable_percentage', 'ep_vat_rate', 'ep_lmf_rate',
+   'ep_annual_interest_rate'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', _debouncedEpPreview);
+  });
+
   function _escapeHtml(str) {
     return String(str || '')
       .replace(/&/g, '&amp;')
@@ -7124,7 +7175,8 @@ var _pendingAcpFiles = [];
       + ' data-prop-added="' + _escapeHtml(prop.created_at || '') + '"'
       + ' data-prop-status="' + _escapeHtml(status) + '"'
       + ' data-prop-listing-status="' + _escapeHtml(listingStatus) + '"'
-      + ' data-prop-images="' + _escapeHtml(imagesCsv) + '">'
+      + ' data-prop-images="' + _escapeHtml(imagesCsv) + '"'
+      + ' data-prop-annual-interest-rate="' + _escapeHtml(prop.annual_interest_rate ?? '') + '">'
       + '  <div class="prop-card-img-wrap">'
       + (firstImg
           ? '    <img src="/uploads/' + _escapeHtml(firstImg) + '" alt="' + _escapeHtml(name) + '" class="prop-card-img">'
@@ -7290,6 +7342,7 @@ var _pendingAcpFiles = [];
       fd.append('loanable_percentage', num('acp_loanable_percentage') || '0');
       fd.append('vat_rate', num('acp_vat_rate') || '0');
       fd.append('lmf_rate', num('acp_lmf_rate') || '0');
+      fd.append('annual_interest_rate', num('acp_annual_interest_rate'));
       fd.append('bedrooms', val('acp_bedrooms') || '0');
       fd.append('bathrooms', val('acp_bathrooms') || '0');
       fd.append('storeys', val('acp_storeys') || '1');

@@ -717,7 +717,7 @@
                   <i class="fas fa-trash"></i>
                 </button>
               </div>
-              <a href="#" id="subPreviewManageLink" class="sub-preview-manage-link">
+              <a href="#" id="subPreviewManageLink" class="sub-preview-manage-link sub-card-manage" data-goto="properties" data-subdivision="">
                 Manage Models <i class="fas fa-arrow-right ms-1"></i>
               </a>
             </div>
@@ -968,6 +968,14 @@
                 <span class="input-group-text sqh-ig-text"><i class="fas fa-file-invoice-dollar"></i></span>
                 <input type="text" data-commas id="ep_lmf_rate" class="form-control sqh-form-control" value="0">
               </div>
+            </div>
+            <div class="col-md-6">
+              <label class="sqh-form-label">Annual Interest Rate (%)</label>
+              <div class="input-group sqh-input-group">
+                <span class="input-group-text sqh-ig-text"><i class="fas fa-percentage"></i></span>
+                <input type="text" data-commas id="ep_annual_interest_rate" class="form-control sqh-form-control" value="" placeholder="e.g. 8.50">
+              </div>
+              <div class="form-text text-muted small mt-1">Used for the monthly amortization estimate. Leave blank to use the system default of {{ '%.2f'|format(default_annual_interest_rate) }}%.</div>
             </div>
             <div class="col-md-6">
               <label class="sqh-form-label">Bedrooms</label>
@@ -2654,6 +2662,7 @@
                  data-prop-loanable-percentage="{{ p.loanable_percentage if p.loanable_percentage is not none else 0 }}"
                  data-prop-vat-rate="{{ p.vat_rate if p.vat_rate is not none else 0 }}"
                  data-prop-lmf-rate="{{ p.lmf_rate if p.lmf_rate is not none else 0 }}"
+                 data-prop-annual-interest-rate="{{ p.annual_interest_rate if p.annual_interest_rate is not none else '' }}"
                  data-prop-bedrooms="{{ p.bedrooms or '' }}"
                  data-prop-bathrooms="{{ p.bathrooms or '' }}"
                  data-prop-storeys="{{ p.storeys or '' }}"

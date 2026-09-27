@@ -214,6 +214,7 @@ CREATE TABLE IF NOT EXISTS properties (
     loanable_percentage DECIMAL(5,2),
     vat_rate        DECIMAL(5,2),
     lmf_rate        DECIMAL(5,2),
+    annual_interest_rate DECIMAL(5,2),
     bedrooms        TINYINT UNSIGNED,
     bathrooms       TINYINT UNSIGNED,
     storeys         TINYINT UNSIGNED,

@@ -362,6 +362,7 @@ class Property(db.Model):
     loanable_percentage = db.Column(db.Numeric(5, 2), nullable=True)
     vat_rate = db.Column(db.Numeric(5, 2), nullable=True)
     lmf_rate = db.Column(db.Numeric(5, 2), nullable=True)
+    annual_interest_rate = db.Column(db.Numeric(5, 2), nullable=True)
     bedrooms    = db.Column(db.SmallInteger)      # matches schema.sql TINYINT UNSIGNED
     bathrooms   = db.Column(db.SmallInteger)      # matches schema.sql TINYINT UNSIGNED
     storeys     = db.Column(db.SmallInteger)      # matches schema.sql TINYINT UNSIGNED; number of floors/storeys
