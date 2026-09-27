@@ -119,159 +119,168 @@ function sqhBindNumericFormatting(root) {
   });
 }
 
-// ── ZoomDragController (shared by all gallery-style modals) ──
-// Verbatim copy of the controller defined in app/templates/index.html.
-// Defined on window so dashboard bundles can reuse it instead of
-// duplicating zoom/drag state. Guarded to avoid clobbering the inline
-// definition on the landing page.
-window.ZoomDragController = window.ZoomDragController || class ZoomDragController {
-  constructor({ frame, wrapper, img, zoomIn, zoomOut, reset }) {
-    this.frame   = frame;
-    this.wrapper = wrapper;
-    this.img     = img;
-    this.zoomIn  = zoomIn;
-    this.zoomOut = zoomOut;
-    this.reset   = reset;
-    this.scale      = 1;
-    this.panX       = 0;
-    this.panY       = 0;
-    this.dragging   = false;
-    this.dragStartX = 0;
-    this.dragStartY = 0;
+/* ── ZoomDragController — shared by all image preview modals ── */
+// Single definition site: base.html loads main.js before all dashboard
+// bundles, so admin/agent/client dashboards reuse this instead of
+// duplicating zoom/drag state. ES5 prototype style to match the
+// var-based dashboard JS. Null-guarded because admin_dashboard.js also
+// loads on agent/client pages where its modal elements are absent.
+window.ZoomDragController = (function () {
+  function ZoomDragController(options) {
+    options = options || {};
+    this.frame   = options.frame;
+    this.wrapper = options.wrapper;
+    this.img     = options.img;
+    this.zoomIn  = options.zoomIn;
+    this.zoomOut = options.zoomOut;
+    this.reset   = options.reset;
+    this.scale   = 1;
+    this.panX    = 0;
+    this.panY    = 0;
+    this.dragging    = false;
+    this.dragStartX  = 0;
+    this.dragStartY  = 0;
     this._bindButtons();
     this._bindPointer();
     this._bindWheel();
     if (this.img) this.img.addEventListener('load', () => this.resetZoom());
     window.addEventListener('resize', () => { this._clamp(); this._apply(); });
   }
-  _clamp() {
+
+  ZoomDragController.prototype._clamp = function () {
     if (!this.frame || !this.img) return;
     if (this.scale <= 1.0001) { this.panX = 0; this.panY = 0; return; }
-    const fw = this.frame.clientWidth;
-    const fh = this.frame.clientHeight;
-    const sw = this.img.offsetWidth * this.scale;
-    const sh = this.img.offsetHeight * this.scale;
-    const maxX = Math.max(0, (sw - fw) / 2);
-    const maxY = Math.max(0, (sh - fh) / 2);
+    var fw = this.frame.clientWidth;
+    var fh = this.frame.clientHeight;
+    var sw = this.img.offsetWidth  * this.scale;
+    var sh = this.img.offsetHeight * this.scale;
+    var maxX = Math.max(0, (sw - fw) / 2);
+    var maxY = Math.max(0, (sh - fh) / 2);
     this.panX = Math.max(-maxX, Math.min(maxX, this.panX));
     this.panY = Math.max(-maxY, Math.min(maxY, this.panY));
-  }
-  _apply() {
+  };
+
+  ZoomDragController.prototype._apply = function () {
     if (!this.wrapper) return;
     this.wrapper.style.transform = 'translate(' + this.panX + 'px,' + this.panY + 'px) scale(' + this.scale + ')';
     this.wrapper.style.transformOrigin = 'center center';
     this.wrapper.classList.toggle('is-dragging', this.dragging);
     if (this.reset) this.reset.textContent = Math.round(this.scale * 100) + '%';
-  }
-  setZoom(next) {
+  };
+
+  ZoomDragController.prototype.setZoom = function (next) {
     this.scale = Math.max(1, Math.min(4, next));
-    this._clamp();
-    this._apply();
-  }
-  resetZoom() {
+    this._clamp(); this._apply();
+  };
+
+  ZoomDragController.prototype.resetZoom = function () {
     this.scale = 1; this.panX = 0; this.panY = 0; this.dragging = false;
     this._apply();
-  }
-  startDrag(cx, cy) {
-    this.dragging   = true;
+  };
+
+  ZoomDragController.prototype.startDrag = function (cx, cy) {
+    this.dragging = true;
     this.dragStartX = cx - this.panX;
     this.dragStartY = cy - this.panY;
     this._apply();
-  }
-  moveDrag(cx, cy) {
+  };
+
+  ZoomDragController.prototype.moveDrag = function (cx, cy) {
     if (!this.dragging) return;
     this.panX = cx - this.dragStartX;
     this.panY = cy - this.dragStartY;
-    this._clamp();
-    this._apply();
-  }
-  endDrag() {
+    this._clamp(); this._apply();
+  };
+
+  ZoomDragController.prototype.endDrag = function () {
     if (!this.dragging) return;
-    this.dragging = false;
-    this._apply();
-  }
-  _bindButtons() {
-    if (this.zoomIn)  this.zoomIn.addEventListener('click', () => this.setZoom(this.scale + 0.25));
-    if (this.zoomOut) this.zoomOut.addEventListener('click', () => this.setZoom(this.scale - 0.25));
-    if (this.reset)   this.reset.addEventListener('click', () => this.resetZoom());
-  }
-  _bindPointer() {
-    let pinchStartDist  = 0;
-    let pinchStartScale = 1;
-    let pinchMidX       = 0;
-    let pinchMidY       = 0;
-    let pinchStartPanX  = 0;
-    let pinchStartPanY  = 0;
-    let isPinching      = false;
-    const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
-    const mid = (t) => ({ x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 });
-    if (this.wrapper) {
-      this.wrapper.addEventListener('touchstart', e => {
-        if (e.touches.length === 2) {
-          isPinching      = true;
-          this.dragging   = false;
-          pinchStartDist  = dist(e.touches);
-          pinchStartScale = this.scale;
-          pinchStartPanX  = this.panX;
-          pinchStartPanY  = this.panY;
-          const rect = this.wrapper.getBoundingClientRect();
-          const m    = mid(e.touches);
-          pinchMidX  = m.x - rect.left - rect.width / 2;
-          pinchMidY  = m.y - rect.top - rect.height / 2;
-        } else if (e.touches.length === 1 && !isPinching) {
-          this.startDrag(e.touches[0].clientX, e.touches[0].clientY);
-        }
-      }, { passive: true });
-      this.wrapper.addEventListener('mousedown', e => {
-        e.preventDefault();
-        this.startDrag(e.clientX, e.clientY);
-      });
-    }
-    window.addEventListener('mousemove', e => this.moveDrag(e.clientX, e.clientY));
-    window.addEventListener('mouseup', () => this.endDrag());
-    window.addEventListener('touchmove', e => {
+    this.dragging = false; this._apply();
+  };
+
+  ZoomDragController.prototype._bindButtons = function () {
+    var self = this;
+    if (this.zoomIn)  this.zoomIn.addEventListener('click',  function () { self.setZoom(self.scale + 0.25); });
+    if (this.zoomOut) this.zoomOut.addEventListener('click', function () { self.setZoom(self.scale - 0.25); });
+    if (this.reset)   this.reset.addEventListener('click',   function () { self.resetZoom(); });
+  };
+
+  ZoomDragController.prototype._bindPointer = function () {
+    var self = this;
+    var isPinching = false, pinchStartDist = 0, pinchStartScale = 1;
+    var pinchMidX = 0, pinchMidY = 0, pinchStartPanX = 0, pinchStartPanY = 0;
+
+    function dist(t) { return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY); }
+    function mid(t)  { return { x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 }; }
+
+    if (!self.wrapper) return;
+    this.wrapper.addEventListener('mousedown', function (e) {
+      e.preventDefault(); self.startDrag(e.clientX, e.clientY);
+    });
+    this.wrapper.addEventListener('touchstart', function (e) {
+      if (e.touches.length === 2) {
+        isPinching = true; self.dragging = false;
+        pinchStartDist  = dist(e.touches);
+        pinchStartScale = self.scale;
+        pinchStartPanX  = self.panX;
+        pinchStartPanY  = self.panY;
+        var rect = self.wrapper.getBoundingClientRect();
+        var m = mid(e.touches);
+        pinchMidX = m.x - rect.left - rect.width  / 2;
+        pinchMidY = m.y - rect.top  - rect.height / 2;
+      } else if (e.touches.length === 1 && !isPinching) {
+        self.startDrag(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
+
+    window.addEventListener('mousemove', function (e) { self.moveDrag(e.clientX, e.clientY); });
+    window.addEventListener('mouseup',   function ()  { self.endDrag(); });
+
+    window.addEventListener('touchmove', function (e) {
       if (e.touches.length === 2 && isPinching) {
         e.preventDefault();
-        const newDist  = dist(e.touches);
+        var newDist = dist(e.touches);
         if (!pinchStartDist) return;
-        const ratio    = newDist / pinchStartDist;
-        const newScale = Math.max(1, Math.min(4, pinchStartScale * ratio));
-        const scaleRatio = newScale / pinchStartScale;
-        this.scale = newScale;
-        this.panX  = pinchMidX + scaleRatio * (pinchStartPanX - pinchMidX);
-        this.panY  = pinchMidY + scaleRatio * (pinchStartPanY - pinchMidY);
-        this._clamp();
-        this._apply();
+        var ratio   = newDist / pinchStartDist;
+        var newScale = Math.max(1, Math.min(4, pinchStartScale * ratio));
+        var scaleRatio = newScale / pinchStartScale;
+        self.scale = newScale;
+        self.panX  = pinchMidX + scaleRatio * (pinchStartPanX - pinchMidX);
+        self.panY  = pinchMidY + scaleRatio * (pinchStartPanY - pinchMidY);
+        self._clamp(); self._apply();
       } else if (e.touches.length === 1 && !isPinching) {
         if (!e.touches.length) return;
-        if (this.dragging) e.preventDefault();
-        this.moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+        if (self.dragging) e.preventDefault();
+        self.moveDrag(e.touches[0].clientX, e.touches[0].clientY);
       }
     }, { passive: false });
-    window.addEventListener('touchend', e => {
+
+    window.addEventListener('touchend', function (e) {
       if (e.touches.length < 2) isPinching = false;
-      if (e.touches.length === 0) this.endDrag();
+      if (e.touches.length === 0) self.endDrag();
     });
-  }
-  _bindWheel() {
-    if (!this.wrapper) return;
-    this.wrapper.addEventListener('wheel', e => {
+  };
+
+  ZoomDragController.prototype._bindWheel = function () {
+    var self = this;
+    if (!self.wrapper) return;
+    this.wrapper.addEventListener('wheel', function (e) {
       e.preventDefault();
-      const rect  = this.wrapper.getBoundingClientRect();
-      const cx    = e.clientX - rect.left - rect.width / 2;
-      const cy    = e.clientY - rect.top - rect.height / 2;
-      const delta = e.deltaY > 0 ? -0.2 : 0.2;
-      const prev  = this.scale;
+      var rect  = self.wrapper.getBoundingClientRect();
+      var cx    = e.clientX - rect.left  - rect.width  / 2;
+      var cy    = e.clientY - rect.top   - rect.height / 2;
+      var delta = e.deltaY > 0 ? -0.2 : 0.2;
+      var prev  = self.scale;
       if (!prev) return;
-      this.scale  = Math.max(1, Math.min(4, prev + delta));
-      const ratio = this.scale / prev;
-      this.panX   = cx + ratio * (this.panX - cx);
-      this.panY   = cy + ratio * (this.panY - cy);
-      this._clamp();
-      this._apply();
+      self.scale = Math.max(1, Math.min(4, prev + delta));
+      var ratio = self.scale / prev;
+      self.panX = cx + ratio * (self.panX - cx);
+      self.panY = cy + ratio * (self.panY - cy);
+      self._clamp(); self._apply();
     }, { passive: false });
-  }
-};
+  };
+
+  return ZoomDragController;
+}());
 
 document.addEventListener('DOMContentLoaded', function () {
 

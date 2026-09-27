@@ -839,11 +839,8 @@
   max-width: min(90vw, 760px);
   width: auto;
   height: auto;
-  cursor: grab;
-  user-select: none;
-  touch-action: none;
+  pointer-events: none;
 }
-.img-preview-img:active { cursor: grabbing; }
 .img-preview-gradient {
   position: absolute;
   bottom: 0;
@@ -864,11 +861,10 @@
 }
 
 .img-preview-zoom-controls {
-  position: absolute;
-  left: .65rem;
-  bottom: .65rem;
   display: flex;
   gap: .35rem;
+  justify-content: center;
+  margin-top: .6rem;
   z-index: 3;
 }
 

@@ -1460,11 +1460,10 @@ body.page-dashboard > main {
 }
 
 .img-preview-zoom-controls {
-  position: absolute;
-  left: .65rem;
-  bottom: .65rem;
   display: flex;
   gap: .35rem;
+  justify-content: center;
+  margin-top: .6rem;
   z-index: 3;
 }
 
@@ -1495,13 +1494,7 @@ body.page-dashboard > main {
 }
 
 .img-preview-img {
-  cursor: grab;
-  user-select: none;
-  touch-action: none;
-}
-
-.img-preview-img:active {
-  cursor: grabbing;
+  pointer-events: none;
 }
 
 #propViewModal .pvm-img {
