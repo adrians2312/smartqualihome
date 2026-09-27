@@ -2940,11 +2940,10 @@ h1 em, .display-serif { font-family: 'Lora', Georgia, serif; font-style: italic;
 }
 
 .gallery-modal-zoom-controls {
-  position: absolute;
-  left: .75rem;
-  bottom: .75rem;
   display: flex;
   gap: .4rem;
+  justify-content: center;
+  margin-top: .6rem;
   z-index: 2;
 }
 
