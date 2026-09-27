@@ -2164,7 +2164,7 @@ body.page-client-portal {
   position: relative;
   line-height: 0;
   overflow: visible;
-  background: transparent;
+  background: rgba(0, 0, 0, .92);
 }
 .img-preview-img {
   display: block;
