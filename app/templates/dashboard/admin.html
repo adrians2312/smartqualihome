@@ -5095,9 +5095,18 @@
   <!-- -- Admin Profile Image Preview Modal ------------------------------- -->
   <div class="modal fade" id="adminImgPreviewModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered img-preview-dialog">
-      <div class="modal-content bg-dark border-0 shadow-lg img-preview-body" style="position:relative;overflow:hidden;">
+      <div class="modal-content bg-dark border-0 shadow-lg img-preview-body gallery-modal-inner" style="position:relative;overflow:hidden;">
         <button type="button" class="img-preview-close-btn" data-bs-dismiss="modal" aria-label="Close"><i class="fas fa-times"></i></button>
-        <img id="adminImgPreviewSrc" src="" alt="Preview" class="img-preview-img d-block">
+        <div class="gallery-modal-img-frame" id="adminImgPreviewImgFrame">
+          <div class="gallery-modal-img-wrapper" id="adminImgPreviewImgWrapper">
+            <img id="adminImgPreviewSrc" src="" alt="Preview" class="gallery-modal-img img-preview-img d-block">
+          </div>
+        </div>
+        <div class="gallery-modal-zoom-controls img-preview-zoom-controls" id="adminImgPreviewZoomControls" aria-label="Image zoom controls">
+          <button type="button" class="img-preview-zoom-btn" id="adminImgPreviewZoomOut" aria-label="Zoom out"><i class="fas fa-search-minus"></i></button>
+          <button type="button" class="img-preview-zoom-btn img-preview-zoom-reset" id="adminImgPreviewZoomReset" aria-label="Reset zoom">100%</button>
+          <button type="button" class="img-preview-zoom-btn" id="adminImgPreviewZoomIn" aria-label="Zoom in"><i class="fas fa-search-plus"></i></button>
+        </div>
         <div class="img-preview-gradient"></div>
         <div class="img-preview-actions">
           <label id="adminImgPreviewReplaceBtn" class="btn btn-sm btn-outline-lime px-3" style="cursor:pointer;">

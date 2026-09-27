@@ -5857,139 +5857,21 @@ var _adminPreviewType = null; // 'avatar' or 'banner'
 
 (function () {
   var _adminPreviewRestoreModalId = null;
-  var _adminPreviewZoomScale = 1;
-  var _adminPreviewPanX = 0;
-  var _adminPreviewPanY = 0;
-  var _adminPreviewIsDragging = false;
-  var _adminPreviewDragStartX = 0;
-  var _adminPreviewDragStartY = 0;
 
   function _applyDarkModalBackdrops() {
     var backdrops = document.querySelectorAll('.modal-backdrop');
     backdrops.forEach(function(el) { el.classList.add('sqh-dark-backdrop'); });
   }
 
-  function _applyAdminPreviewTransform() {
-    var imgEl = document.getElementById('adminImgPreviewSrc');
-    if (!imgEl) return;
-    _clampAdminPreviewPan();
-    imgEl.style.transform = 'translate(' + _adminPreviewPanX + 'px, ' + _adminPreviewPanY + 'px) scale(' + _adminPreviewZoomScale + ')';
-    imgEl.style.transformOrigin = 'center center';
-    imgEl.style.cursor = _adminPreviewIsDragging ? 'grabbing' : 'grab';
-  }
-
-  function _clampAdminPreviewPan() {
-    var frameEl = document.querySelector('#adminImgPreviewModal .img-preview-body');
-    var imgEl = document.getElementById('adminImgPreviewSrc');
-    if (!frameEl || !imgEl) return;
-    var frameW = frameEl.clientWidth;
-    var frameH = frameEl.clientHeight;
-    var scaledW = imgEl.clientWidth * _adminPreviewZoomScale;
-    var scaledH = imgEl.clientHeight * _adminPreviewZoomScale;
-    var maxX = Math.max(0, (scaledW - frameW) / 2);
-    var maxY = Math.max(0, (scaledH - frameH) / 2);
-    _adminPreviewPanX = Math.max(-maxX, Math.min(maxX, _adminPreviewPanX));
-    _adminPreviewPanY = Math.max(-maxY, Math.min(maxY, _adminPreviewPanY));
-    if (_adminPreviewZoomScale <= 1.0001) {
-      _adminPreviewPanX = 0;
-      _adminPreviewPanY = 0;
-    }
-  }
-
-  function _setAdminPreviewZoomScale(nextScale) {
-    var imgEl = document.getElementById('adminImgPreviewSrc');
-    if (!imgEl) return;
-    _adminPreviewZoomScale = Math.max(1, Math.min(4, nextScale));
-    _applyAdminPreviewTransform();
-    var resetBtn = document.getElementById('adminImgPreviewZoomReset');
-    if (resetBtn) resetBtn.textContent = Math.round(_adminPreviewZoomScale * 100) + '%';
-  }
-
-  function _resetAdminPreviewZoom() {
-    _adminPreviewPanX = 0;
-    _adminPreviewPanY = 0;
-    _adminPreviewIsDragging = false;
-    _setAdminPreviewZoomScale(1);
-  }
-
-  function _startAdminPreviewDrag(clientX, clientY) {
-    _adminPreviewIsDragging = true;
-    _adminPreviewDragStartX = clientX - _adminPreviewPanX;
-    _adminPreviewDragStartY = clientY - _adminPreviewPanY;
-    _applyAdminPreviewTransform();
-  }
-
-  function _moveAdminPreviewDrag(clientX, clientY) {
-    if (!_adminPreviewIsDragging) return;
-    _adminPreviewPanX = clientX - _adminPreviewDragStartX;
-    _adminPreviewPanY = clientY - _adminPreviewDragStartY;
-    _applyAdminPreviewTransform();
-  }
-
-  function _endAdminPreviewDrag() {
-    if (!_adminPreviewIsDragging) return;
-    _adminPreviewIsDragging = false;
-    _applyAdminPreviewTransform();
-  }
-
-  function _ensureAdminPreviewZoomControls() {
-    var bodyEl = document.querySelector('#adminImgPreviewModal .img-preview-body');
-    if (!bodyEl || document.getElementById('adminImgPreviewZoomControls')) return;
-    var controls = document.createElement('div');
-    controls.className = 'img-preview-zoom-controls';
-    controls.id = 'adminImgPreviewZoomControls';
-    controls.innerHTML = ''
-      + '<button type="button" class="img-preview-zoom-btn" id="adminImgPreviewZoomOut" aria-label="Zoom out"><i class="fas fa-search-minus"></i></button>'
-      + '<button type="button" class="img-preview-zoom-btn img-preview-zoom-reset" id="adminImgPreviewZoomReset" aria-label="Reset zoom">100%</button>'
-      + '<button type="button" class="img-preview-zoom-btn" id="adminImgPreviewZoomIn" aria-label="Zoom in"><i class="fas fa-search-plus"></i></button>';
-    bodyEl.appendChild(controls);
-
-    var zoomInBtn = document.getElementById('adminImgPreviewZoomIn');
-    var zoomOutBtn = document.getElementById('adminImgPreviewZoomOut');
-    var zoomResetBtn = document.getElementById('adminImgPreviewZoomReset');
-    if (zoomInBtn) zoomInBtn.addEventListener('click', function() { _setAdminPreviewZoomScale(_adminPreviewZoomScale + 0.25); });
-    if (zoomOutBtn) zoomOutBtn.addEventListener('click', function() { _setAdminPreviewZoomScale(_adminPreviewZoomScale - 0.25); });
-    if (zoomResetBtn) zoomResetBtn.addEventListener('click', function() { _resetAdminPreviewZoom(); });
-
-    var imgEl = document.getElementById('adminImgPreviewSrc');
-    if (imgEl) {
-      imgEl.addEventListener('load', function() {
-        _adminPreviewPanX = 0;
-        _adminPreviewPanY = 0;
-        _applyAdminPreviewTransform();
-      });
-      imgEl.addEventListener('mousedown', function(e) {
-        e.preventDefault();
-        _startAdminPreviewDrag(e.clientX, e.clientY);
-      });
-      imgEl.addEventListener('touchstart', function(e) {
-        if (!e.touches || !e.touches.length) return;
-        _startAdminPreviewDrag(e.touches[0].clientX, e.touches[0].clientY);
-      }, { passive: true });
-      imgEl.addEventListener('wheel', function(e) {
-        e.preventDefault();
-        _setAdminPreviewZoomScale(_adminPreviewZoomScale + (e.deltaY < 0 ? 0.2 : -0.2));
-      }, { passive: false });
-    }
-
-    window.addEventListener('mousemove', function(e) {
-      _moveAdminPreviewDrag(e.clientX, e.clientY);
-    });
-    window.addEventListener('mouseup', function() {
-      _endAdminPreviewDrag();
-    });
-    window.addEventListener('touchmove', function(e) {
-      if (!e.touches || !e.touches.length) return;
-      if (_adminPreviewIsDragging) e.preventDefault();
-      _moveAdminPreviewDrag(e.touches[0].clientX, e.touches[0].clientY);
-    }, { passive: false });
-    window.addEventListener('touchend', function() {
-      _endAdminPreviewDrag();
-    });
-    window.addEventListener('resize', function() {
-      _applyAdminPreviewTransform();
-    });
-  }
+  // ── Zoom/drag (delegated to shared controller in main.js) ──
+  var adminZoomCtrl = new ZoomDragController({
+    frame:   document.getElementById('adminImgPreviewImgFrame'),
+    wrapper: document.getElementById('adminImgPreviewImgWrapper'),
+    img:     document.getElementById('adminImgPreviewSrc'),
+    zoomIn:  document.getElementById('adminImgPreviewZoomIn'),
+    zoomOut: document.getElementById('adminImgPreviewZoomOut'),
+    reset:   document.getElementById('adminImgPreviewZoomReset'),
+  });
 
   function _setAdminPreviewActionsVisible(visible) {
     var actionsEl = document.querySelector('#adminImgPreviewModal .img-preview-actions');
@@ -6004,7 +5886,7 @@ var _adminPreviewType = null; // 'avatar' or 'banner'
     var imgEl = document.getElementById('adminImgPreviewSrc');
     if (imgEl) imgEl.src = imgUrl;
     _setAdminPreviewActionsVisible(true);
-    _resetAdminPreviewZoom();
+    adminZoomCtrl.resetZoom();
     bootstrap.Modal.getOrCreateInstance(document.getElementById('adminImgPreviewModal')).show();
   }
 
@@ -6013,7 +5895,7 @@ var _adminPreviewType = null; // 'avatar' or 'banner'
     var imgEl = document.getElementById('adminImgPreviewSrc');
     if (imgEl) imgEl.src = imgUrl;
     _setAdminPreviewActionsVisible(false);
-    _resetAdminPreviewZoom();
+    adminZoomCtrl.resetZoom();
     var previewModalEl = document.getElementById('adminImgPreviewModal');
     var showPreview = function() {
       bootstrap.Modal.getOrCreateInstance(previewModalEl).show();
@@ -6033,11 +5915,11 @@ var _adminPreviewType = null; // 'avatar' or 'banner'
 
   var previewModalEl = document.getElementById('adminImgPreviewModal');
   if (previewModalEl) {
-    _ensureAdminPreviewZoomControls();
     previewModalEl.addEventListener('show.bs.modal', function() {
-      _resetAdminPreviewZoom();
+      adminZoomCtrl.resetZoom();
     });
     previewModalEl.addEventListener('hidden.bs.modal', function() {
+      adminZoomCtrl.resetZoom();
       if (!_adminPreviewRestoreModalId) return;
       var restoreEl = document.getElementById(_adminPreviewRestoreModalId);
       _adminPreviewRestoreModalId = null;
