@@ -1207,6 +1207,7 @@ function _addSubProjectOption(projectId, projectName, locMeta) {
 }
 
 var _pendingProjFiles = [];
+var _projDeleteQueue = [];
 
 _bind('projImagesWrap', 'click', function(e) {
   var btn = e.target.closest('.sub-img-tile-del');
@@ -1215,13 +1216,18 @@ _bind('projImagesWrap', 'click', function(e) {
   var idx = tile ? tile.dataset.newIdx : null;
   if (idx !== null && idx !== undefined) {
     _pendingProjFiles[parseInt(idx, 10)] = null;
+    var fnEl = document.getElementById('projImagesFilenames');
+    if (fnEl) {
+      var names = _pendingProjFiles.filter(Boolean).map(function (f) { return f.name; });
+      fnEl.value = names.join(', ');
+    }
+  } else {
+    var imgId = btn.dataset.imgId || (tile ? tile.dataset.imgId : '');
+    if (imgId) {
+      _projDeleteQueue.push(String(imgId));
+    }
   }
   if (tile) tile.remove();
-  var fnEl = document.getElementById('projImagesFilenames');
-  if (fnEl) {
-    var names = _pendingProjFiles.filter(Boolean).map(function (f) { return f.name; });
-    fnEl.value = names.join(', ');
-  }
 });
 
 _bind('projImages', 'change', function() {
@@ -1777,6 +1783,7 @@ function _openProjectEditModal(projectId) {
       }
       var data = res.data;
       _activeProjectEditId = String(projectId);
+      _projDeleteQueue = [];
       var titleEl = document.getElementById('addProjectLabel');
       if (titleEl) titleEl.textContent = 'Edit Project';
       var submitBtn = document.getElementById('addProjectSubmitBtn');
@@ -1793,7 +1800,12 @@ function _openProjectEditModal(projectId) {
         (data.image_ids || []).forEach(function(imgId) {
           var tile = document.createElement('div');
           tile.className = 'sub-img-tile';
-          tile.innerHTML = '<img src="' + sqhImgSrc(imgId) + '" class="sub-img-tile-img" alt="">';
+          tile.dataset.imgId = imgId;
+          tile.innerHTML =
+            '<img src="' + sqhImgSrc(imgId) + '" class="sub-img-tile-img" alt="">' +
+            '<button type="button" class="sub-img-tile-del" data-img-id="' + imgId + '" title="Remove">' +
+              '<i class="fas fa-times"></i>' +
+            '</button>';
           wrap.appendChild(tile);
         });
       }
@@ -1812,6 +1824,7 @@ function _openProjectEditModal(projectId) {
 _bind('addProjectModal', 'hidden.bs.modal', function() {
   _pendingProjFiles = [];
   _activeProjectEditId = null;
+  _projDeleteQueue = [];
   var titleEl = document.getElementById('addProjectLabel');
   if (titleEl) titleEl.textContent = 'Add New Project';
   var submitBtn = document.getElementById('addProjectSubmitBtn');
@@ -1857,6 +1870,10 @@ _bind('addProjectSubmitBtn', 'click', function() {
   fd.append('lot_no', '');
   fd.append('description', (document.getElementById('projDescription').value || '').trim());
 
+  _projDeleteQueue.forEach(function(imgId) {
+    fd.append('remove_image_ids', imgId);
+  });
+
   _pendingProjFiles.filter(Boolean).forEach(function(f) { fd.append('image_files', f); });
   fd.append('csrf_token', csrfToken());
 
@@ -1879,6 +1896,7 @@ _bind('addProjectSubmitBtn', 'click', function() {
         return;
       }
       if (_activeProjectEditId) {
+        _projDeleteQueue = [];
         bootstrap.Modal.getInstance(document.getElementById('addProjectModal')).hide();
         // Patch the existing card in place (no page reload)
         var card = document.querySelector('.sub-card[data-project-id="' + _activeProjectEditId + '"]');
