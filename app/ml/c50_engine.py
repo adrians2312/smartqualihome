@@ -60,7 +60,7 @@ FEATURE_NAMES = [
     "age",
     "dependents",
     "dti_ratio",
-    "net_monthly",      # gross_income*0.72 - monthly_loans
+    "net_monthly",      #    gross_income*0.72 - monthly_loans
 ]
 
 # In-memory singleton state

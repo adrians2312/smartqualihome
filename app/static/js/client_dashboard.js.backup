@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    CLIENT DASHBOARD — client_dashboard.js
    Depends on admin_dashboard.js (showPage, showToast)
    ============================================================ */
@@ -861,22 +861,20 @@
       const secNGrid  = document.getElementById('browseSecNotQualifiedGrid');
       const year = _selectedBrowseYear(qual);
 
-      function _returnCardsToMainGrid() {
-        if (!grid) return;
-        [secQGrid, secCGrid, secNGrid].forEach(function (sec) {
-          if (!sec) return;
-          while (sec.firstElementChild) {
-            grid.appendChild(sec.firstElementChild);
-          }
-        });
-      }
-
       if (year) {
         // ── Year-split view: organize cards into 3 qualification sections ──
-        // Safely return all cards from section grids back to the main grid.
-        _returnCardsToMainGrid();
+        // First return any cards already in section grids back to the main grid.
+        [secQGrid, secCGrid, secNGrid].forEach(function (sec) {
+          if (!sec) return;
+          Array.prototype.forEach.call(sec.children, function (col) {
+            if (grid) grid.appendChild(col);
+          });
+        });
         if (browseSections) browseSections.classList.remove('d-none');
         if (grid) grid.classList.add('d-none');
+        if (secQGrid) secQGrid.innerHTML = '';
+        if (secCGrid) secCGrid.innerHTML = '';
+        if (secNGrid) secNGrid.innerHTML = '';
 
         var qCount = 0, cCount = 0, nCount = 0;
         grid.querySelectorAll(".browse-card-col").forEach(function (col) {
@@ -917,7 +915,12 @@
       // ── Flat view: return all cards to the main grid sorted by qualification tier ──
       if (browseSections) browseSections.classList.add('d-none');
       if (grid) grid.classList.remove('d-none');
-      _returnCardsToMainGrid();
+      [secQGrid, secCGrid, secNGrid].forEach(function (sec) {
+        if (!sec) return;
+        Array.prototype.forEach.call(sec.children, function (col) {
+          if (grid) grid.appendChild(col);
+        });
+      });
 
       // Collect cols that pass base filters (search/type/budget/beds); qualification filter now sorts instead of hiding
       var flatCols = [];
