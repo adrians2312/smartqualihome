@@ -1615,6 +1615,7 @@ function _syncEditSubdivisionLocation() {
   var regionName = txt(regionSel);
   var provinceName = txt(provinceSel);
   var cityName = txt(citySel);
+  var brgyName = txt(brgySel);
   var stVal = ((document.getElementById('editSubStreet') || {}).value || '').trim();
   var blkVal = ((document.getElementById('editSubBlock') || {}).value || '').trim();
   var lotVal = ((document.getElementById('editSubLotNo') || {}).value || '').trim();
@@ -2221,10 +2222,6 @@ function _openSubdivisionEditModal(subId, card) {
         wrap.appendChild(tile);
       });
     }
-
-    ['editSubProject','editSubRegionSelect','editSubProvinceSelect','editSubCitymunSelect','editSubBarangaySelect'].forEach(function(id){
-      var el = document.getElementById(id); if (el) el.selectedIndex = 0;
-    });
 
     _preselectEditSubdivisionPsgc({
       regionCode: data.region_code || '',
