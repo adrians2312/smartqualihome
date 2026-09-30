@@ -1,4 +1,4 @@
-﻿/* QUALIHOME — Dashboard JavaScript
+/* QUALIHOME — Dashboard JavaScript
    Shared by: admin.html, client.html, agent.html
    Loaded after main.js via {% block scripts %} in each dashboard template.
 */
@@ -1615,8 +1615,14 @@ function _syncEditSubdivisionLocation() {
   var regionName = txt(regionSel);
   var provinceName = txt(provinceSel);
   var cityName = txt(citySel);
-  var brgyName = txt(brgySel);
-  var line = ((document.getElementById('editSubSiteNotes') || {}).value || '').trim();
+  var stVal = ((document.getElementById('editSubStreet') || {}).value || '').trim();
+  var blkVal = ((document.getElementById('editSubBlock') || {}).value || '').trim();
+  var lotVal = ((document.getElementById('editSubLotNo') || {}).value || '').trim();
+  var addrParts = [];
+  if (lotVal) addrParts.push('Lot ' + lotVal);
+  if (blkVal) addrParts.push('Blk ' + blkVal);
+  if (stVal) addrParts.push(stVal);
+  var line = addrParts.join(', ') || ((document.getElementById('editSubSiteNotes') || {}).value || '').trim();
   var tail = [brgyName, cityName, provinceName, regionName].filter(Boolean).join(', ');
   var loc = [line, tail].filter(Boolean).join(', ');
   var setVal = function(id, val){ var el = document.getElementById(id); if (el) el.value = val || ''; };
@@ -1679,6 +1685,9 @@ function initEditSubdivisionPsgc() {
 
   brgySel.addEventListener('change', _syncEditSubdivisionLocation);
   _bind('editSubSiteNotes', 'input', _syncEditSubdivisionLocation);
+  _bind('editSubStreet', 'input', _syncEditSubdivisionLocation);
+  _bind('editSubBlock', 'input', _syncEditSubdivisionLocation);
+  _bind('editSubLotNo', 'input', _syncEditSubdivisionLocation);
 }
 initEditSubdivisionPsgc();
 
@@ -2124,16 +2133,16 @@ var _editSubId = null;
 var _editDeleteQueue = []; // image IDs staged for deletion on Save
 var _pendingEditSubFiles = [];
 
-document.addEventListener('click', function(e) {
-  var btn = e.target.closest('.sub-edit-btn');
-  if (!btn) return;
-  var card = btn.closest('.sub-card');
-  _editSubId = btn.dataset.subId;
+function _openSubdivisionEditModal(subId, card) {
+  if (!subId) return;
+  _editSubId = String(subId);
   _editDeleteQueue = []; // reset on each open
   _pendingEditSubFiles = [];
 
   function populateSubdivisionEditForm(data) {
-    document.getElementById('editSubName').value = data.name || '';
+    var nameEl = document.getElementById('editSubName');
+    if (nameEl) nameEl.value = data.name || '';
+
     var editProjectSel = document.getElementById('editSubProject');
     if (editProjectSel) {
       var pid = String(data.project_id || '');
@@ -2148,6 +2157,14 @@ document.addEventListener('click', function(e) {
       }
       editProjectSel.value = pid;
     }
+
+    var streetEl = document.getElementById('editSubStreet');
+    if (streetEl) streetEl.value = data.street || '';
+    var blockEl = document.getElementById('editSubBlock');
+    if (blockEl) blockEl.value = data.block || '';
+    var lotEl = document.getElementById('editSubLotNo');
+    if (lotEl) lotEl.value = data.lot_no || '';
+
     var fullLoc = (data.location || '').trim();
     var tailParts = [data.barangay_name, data.citymun_name, data.province_name, data.region_name]
       .filter(function (x) { return (x || '').trim(); })
@@ -2166,34 +2183,49 @@ document.addEventListener('click', function(e) {
         }
       }
     }
-    document.getElementById('editSubSiteNotes').value = lineOnly;
-    document.getElementById('editSubLocation').value = fullLoc;
-    document.getElementById('editSubDescription').value = data.description || '';
-    document.getElementById('editSubRegionCode').value = data.region_code || '';
-    document.getElementById('editSubRegionName').value = data.region_name || '';
-    document.getElementById('editSubProvinceCode').value = data.province_code || '';
-    document.getElementById('editSubProvinceName').value = data.province_name || '';
-    document.getElementById('editSubCitymunCode').value = data.citymun_code || '';
-    document.getElementById('editSubCitymunName').value = data.citymun_name || '';
-    document.getElementById('editSubBarangayCode').value = data.barangay_code || '';
-    document.getElementById('editSubBarangayName').value = data.barangay_name || '';
+    var siteNotesEl = document.getElementById('editSubSiteNotes');
+    if (siteNotesEl) siteNotesEl.value = lineOnly;
+
+    var locEl = document.getElementById('editSubLocation');
+    if (locEl) locEl.value = fullLoc;
+
+    var descEl = document.getElementById('editSubDescription');
+    if (descEl) descEl.value = data.description || '';
+
+    var setElVal = function(id, val) {
+      var el = document.getElementById(id);
+      if (el) el.value = val || '';
+    };
+    setElVal('editSubRegionCode', data.region_code);
+    setElVal('editSubRegionName', data.region_name);
+    setElVal('editSubProvinceCode', data.province_code);
+    setElVal('editSubProvinceName', data.province_name);
+    setElVal('editSubCitymunCode', data.citymun_code);
+    setElVal('editSubCitymunName', data.citymun_name);
+    setElVal('editSubBarangayCode', data.barangay_code);
+    setElVal('editSubBarangayName', data.barangay_name);
+
     var imageIds = data.image_ids || [];
     var wrap = document.getElementById('editSubImagesWrap');
-    wrap.innerHTML = '';
-    imageIds.forEach(function(imgId) {
-      var tile = document.createElement('div');
-      tile.className = 'sub-img-tile';
-      tile.dataset.imgId = imgId;
-      tile.innerHTML =
-        '<img src="' + sqhImgSrc(imgId) + '" class="sub-img-tile-img" alt="">' +
-        '<button type="button" class="sub-img-tile-del" data-img-id="' + imgId + '" title="Remove">' +
-          '<i class="fas fa-times"></i>' +
-        '</button>';
-      wrap.appendChild(tile);
-    });
+    if (wrap) {
+      wrap.innerHTML = '';
+      imageIds.forEach(function(imgId) {
+        var tile = document.createElement('div');
+        tile.className = 'sub-img-tile';
+        tile.dataset.imgId = imgId;
+        tile.innerHTML =
+          '<img src="' + sqhImgSrc(imgId) + '" class="sub-img-tile-img" alt="">' +
+          '<button type="button" class="sub-img-tile-del" data-img-id="' + imgId + '" title="Remove">' +
+            '<i class="fas fa-times"></i>' +
+          '</button>';
+        wrap.appendChild(tile);
+      });
+    }
+
     ['editSubProject','editSubRegionSelect','editSubProvinceSelect','editSubCitymunSelect','editSubBarangaySelect'].forEach(function(id){
       var el = document.getElementById(id); if (el) el.selectedIndex = 0;
     });
+
     _preselectEditSubdivisionPsgc({
       regionCode: data.region_code || '',
       regionName: data.region_name || '',
@@ -2209,10 +2241,12 @@ document.addEventListener('click', function(e) {
   ['editSubProject','editSubRegionSelect','editSubProvinceSelect','editSubCitymunSelect','editSubBarangaySelect'].forEach(function(id){
     var el = document.getElementById(id); if (el) el.selectedIndex = 0;
   });
-  document.getElementById('editSubImages').value      = '';
+  var subImgInput = document.getElementById('editSubImages');
+  if (subImgInput) subImgInput.value = '';
   var editFnEl = document.getElementById('editSubImagesFilenames');
   if (editFnEl) editFnEl.value = '';
-  document.getElementById('editSubError').classList.add('d-none');
+  var errEl = document.getElementById('editSubError');
+  if (errEl) errEl.classList.add('d-none');
 
   fetch('/admin/subdivision/' + encodeURIComponent(_editSubId) + '/detail', {
     headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -2223,25 +2257,40 @@ document.addEventListener('click', function(e) {
       populateSubdivisionEditForm(res.data);
       bootstrap.Modal.getOrCreateInstance(document.getElementById('editSubdivisionModal')).show();
     })
-    .catch(function() {
-      populateSubdivisionEditForm({
-        name: card.dataset.subName || '',
-        project_id: card.dataset.subProjectId || '',
-        location: card.dataset.subLocation || '',
-        region_code: card.dataset.subRegionCode || '',
-        region_name: card.dataset.subRegionName || '',
-        province_code: card.dataset.subProvinceCode || '',
-        province_name: card.dataset.subProvinceName || '',
-        citymun_code: card.dataset.subCitymunCode || '',
-        citymun_name: card.dataset.subCitymunName || '',
-        barangay_code: card.dataset.subBarangayCode || '',
-        barangay_name: card.dataset.subBarangayName || '',
-        description: card.dataset.subDescription || '',
-        image_ids: JSON.parse(card.dataset.subImages || '[]')
-      });
-      bootstrap.Modal.getOrCreateInstance(document.getElementById('editSubdivisionModal')).show();
-      showToast('Loaded project details from card cache.', 'warning');
+    .catch(function(err) {
+      if (card) {
+        populateSubdivisionEditForm({
+          name: card.dataset.subName || '',
+          project_id: card.dataset.subProjectId || '',
+          project_name: card.dataset.subProjectName || '',
+          street: card.dataset.subStreet || '',
+          block: card.dataset.subBlock || '',
+          lot_no: card.dataset.subLotNo || '',
+          location: card.dataset.subLocation || '',
+          region_code: card.dataset.subRegionCode || '',
+          region_name: card.dataset.subRegionName || '',
+          province_code: card.dataset.subProvinceCode || '',
+          province_name: card.dataset.subProvinceName || '',
+          citymun_code: card.dataset.subCitymunCode || '',
+          citymun_name: card.dataset.subCitymunName || '',
+          barangay_code: card.dataset.subBarangayCode || '',
+          barangay_name: card.dataset.subBarangayName || '',
+          description: card.dataset.subDescription || '',
+          image_ids: JSON.parse(card.dataset.subImages || '[]')
+        });
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('editSubdivisionModal')).show();
+        showToast('Loaded project details from card cache.', 'warning');
+      } else {
+        showToast((err && err.message) || 'Failed to load project details.', 'danger');
+      }
     });
+}
+
+document.addEventListener('click', function(e) {
+  var btn = e.target.closest('.sub-edit-btn');
+  if (!btn) return;
+  var card = btn.closest('.sub-card');
+  _openSubdivisionEditModal(btn.dataset.subId, card);
 });
 
 // X button: stage for deletion (no network call yet)
@@ -2294,7 +2343,7 @@ _bind('editSubImages', 'change', function() {
 _bind('editSubdivisionModal', 'hidden.bs.modal', function() {
   _editDeleteQueue = [];
   _pendingEditSubFiles = [];
-  ['editSubSiteNotes','editSubLocation','editSubRegionCode','editSubRegionName','editSubProvinceCode','editSubProvinceName','editSubCitymunCode','editSubCitymunName','editSubBarangayCode','editSubBarangayName'].forEach(function(id){
+  ['editSubSiteNotes','editSubStreet','editSubBlock','editSubLotNo','editSubLocation','editSubRegionCode','editSubRegionName','editSubProvinceCode','editSubProvinceName','editSubCitymunCode','editSubCitymunName','editSubBarangayCode','editSubBarangayName'].forEach(function(id){
     var el = document.getElementById(id); if (el) el.value = '';
   });
   ['editSubProject','editSubRegionSelect','editSubProvinceSelect','editSubCitymunSelect','editSubBarangaySelect'].forEach(function(id){
@@ -2329,6 +2378,9 @@ _bind('editSubSubmitBtn', 'click', function() {
     var fd = new FormData();
     fd.append('project_id',  (document.getElementById('editSubProject').value || '').trim());
     fd.append('name',        _savedName);
+    fd.append('street',      (document.getElementById('editSubStreet') ? document.getElementById('editSubStreet').value : '').trim());
+    fd.append('block',       (document.getElementById('editSubBlock') ? document.getElementById('editSubBlock').value : '').trim());
+    fd.append('lot_no',      (document.getElementById('editSubLotNo') ? document.getElementById('editSubLotNo').value : '').trim());
     fd.append('location',    _savedLoc);
     fd.append('region_code', document.getElementById('editSubRegionCode').value.trim());
     fd.append('region_name', document.getElementById('editSubRegionName').value.trim());
@@ -2367,6 +2419,9 @@ _bind('editSubSubmitBtn', 'click', function() {
       card.dataset.subName        = _savedName;
       card.dataset.subProjectId   = (document.getElementById('editSubProject').value || '').trim();
       card.dataset.subProjectName = projectName;
+      card.dataset.subStreet      = (document.getElementById('editSubStreet') ? document.getElementById('editSubStreet').value : '').trim();
+      card.dataset.subBlock       = (document.getElementById('editSubBlock') ? document.getElementById('editSubBlock').value : '').trim();
+      card.dataset.subLotNo       = (document.getElementById('editSubLotNo') ? document.getElementById('editSubLotNo').value : '').trim();
       card.dataset.subLocation    = _savedLoc;
       card.dataset.subRegionCode  = document.getElementById('editSubRegionCode').value.trim();
       card.dataset.subRegionName  = document.getElementById('editSubRegionName').value.trim();
@@ -2536,9 +2591,22 @@ document.addEventListener('click', function(e) {
   _showPreviewSlide(0);
 
   document.getElementById('subPreviewEditBtn').onclick = function() {
-    bootstrap.Modal.getInstance(document.getElementById('subPreviewModal')).hide();
-    var editCardBtn = document.querySelector('.sub-edit-btn[data-sub-id="' + subId + '"]');
-    if (editCardBtn) editCardBtn.click();
+    var prevModalEl = document.getElementById('subPreviewModal');
+    var prevModal = prevModalEl ? bootstrap.Modal.getInstance(prevModalEl) : null;
+    var targetCard = document.querySelector('.sub-card[data-sub-id="' + subId + '"]');
+    if (prevModal && prevModalEl.classList.contains('show')) {
+      var triggered = false;
+      var triggerOpen = function() {
+        if (triggered) return;
+        triggered = true;
+        _openSubdivisionEditModal(subId, targetCard);
+      };
+      prevModalEl.addEventListener('hidden.bs.modal', triggerOpen, { once: true });
+      setTimeout(triggerOpen, 350);
+      prevModal.hide();
+    } else {
+      _openSubdivisionEditModal(subId, targetCard);
+    }
   };
   document.getElementById('subPreviewDeleteBtn').onclick = function() {
     bootstrap.Modal.getInstance(document.getElementById('subPreviewModal')).hide();
