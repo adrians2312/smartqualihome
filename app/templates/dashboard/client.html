@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block title %}My Home  QUALIHOME{% endblock %}
 {% block body_class %}page-client-portal{% endblock %}
 {% block footer %}{% endblock %}
@@ -13,7 +13,7 @@
 <script id="buyer-countries-config" type="application/json">{{ (country_options or [])|tojson }}</script>
 <script id="qm-live-config" type="application/json">{{ (live_meter_cfg or {})|tojson }}</script>
 <script src="{{ url_for('static', filename='js/admin_dashboard.js') }}"></script>
-<script src="{{ url_for('static', filename='js/client_dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/client_dashboard.js') }}?v=2.0"></script>
 <script>
 /* -- Pre-Qualification Assessment Modal Wizard --------------- */
 (function () {
