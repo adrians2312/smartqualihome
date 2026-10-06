@@ -2531,11 +2531,6 @@
       document.getElementById('pvmReqIncomeBadge20'),
       _computeQualificationStatus(reqIncome['20'] || 0, clientIncome, false)
     );
-    setText('pvmProcessingFee', processingFee || '—');
-    setText('pvmOrPrNo', orPrNo || '—');
-    setText('pvmOrPrDate', orPrDate || '—');
-    setText('pvmDownpaymentTermAdmin', downpaymentTerm || '—');
-    setText('pvmLoanTermAdmin', loanTerm || '—');
   }
 
   function openPropDetail(card, options) {
